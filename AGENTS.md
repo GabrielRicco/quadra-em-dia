@@ -32,6 +32,7 @@ package.json        "type": "module" e script "test"
 ## Comandos
 - Rodar localmente: `python -m http.server 8000` e abrir http://localhost:8000
 - Rodar os testes: `npm test` (equivale a `node --test`, que acha todos os arquivos *.test.js)
+- CI: `.github/workflows/testes.yml` roda `npm test` no GitHub Actions a cada push e PR (Node 24, fuso America/Sao_Paulo). Push com teste quebrando deixa o selo do README vermelho.
 
 ## Convenções
 - Toda regra de negócio fica em `js/regras.js` e é usada pela tela; o banco repete a mesma regra.
