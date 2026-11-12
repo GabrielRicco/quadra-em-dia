@@ -104,12 +104,35 @@
 
       <section id="secao-pacotes" data-secao="pacotes" hidden>
         <div class="secao-topo">
-          <h1 class="titulo">Pacotes</h1>
+          <div>
+            <h1 class="titulo">Pacotes</h1>
+            <p id="pacotes-contagem" class="subtitulo"></p>
+          </div>
+          <button type="button" id="botao-novo-pacote" class="botao botao-destaque">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Novo pacote
+          </button>
+
+          <div class="ferramentas">
+            <label for="busca-pacotes" class="visualmente-oculto">Buscar pacote pelo nome do aluno</label>
+            <input id="busca-pacotes" type="search" class="busca" placeholder="Buscar pelo nome do aluno" autocomplete="off">
+            <div class="chips" role="radiogroup" aria-label="Filtrar pacotes">
+              <label class="chip"><input type="radio" name="filtro-pacotes" value="todos" checked><span>Todos</span></label>
+              <label class="chip"><input type="radio" name="filtro-pacotes" value="abertos"><span>Em aberto</span></label>
+              <label class="chip"><input type="radio" name="filtro-pacotes" value="pagos"><span>Pagos</span></label>
+              <label class="chip"><input type="radio" name="filtro-pacotes" value="acabando"><span>Saldo acabando</span></label>
+            </div>
+          </div>
         </div>
-        <div class="vazio">
-          <p class="vazio-titulo">Em breve</p>
-          <p>Os pacotes de cada aluno vão aparecer aqui, com o saldo de aulas.</p>
+        <div id="pacotes-vazio" class="vazio" hidden>
+          <p class="vazio-titulo">Nenhum pacote ainda</p>
+          <p>Toque em "Novo pacote" para registrar o primeiro pacote de aulas.</p>
         </div>
+        <div id="pacotes-sem-resultado" class="vazio" hidden>
+          <p class="vazio-titulo">Nenhum pacote encontrado</p>
+          <p>Mude a busca ou o filtro.</p>
+        </div>
+        <ul id="lista-pacotes" class="lista"></ul>
       </section>
 
       <section id="secao-resumo" data-secao="resumo" hidden>
@@ -167,6 +190,71 @@
 
         <div class="dialogo-rodape">
           <button type="button" id="botao-excluir-aluno" class="botao botao-perigo-texto" hidden>Excluir aluno</button>
+          <div class="dialogo-rodape-acoes">
+            <button type="button" class="botao botao-secundario" data-fechar>Cancelar</button>
+            <button type="submit" class="botao botao-primario">Salvar</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Formulário de pacote (criar, editar, marcar pago e excluir) -->
+    <dialog id="dialogo-pacote" class="dialogo" aria-labelledby="dialogo-pacote-titulo">
+      <form id="form-pacote" class="formulario" novalidate>
+        <div class="dialogo-cabecalho">
+          <h2 id="dialogo-pacote-titulo">Novo pacote</h2>
+          <button type="button" class="botao-icone" data-fechar aria-label="Fechar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="campo">
+          <label for="pacote-aluno">Aluno</label>
+          <select id="pacote-aluno" name="aluno_id" required></select>
+        </div>
+
+        <div class="campos-lado-a-lado">
+          <div class="campo">
+            <label for="pacote-quantidade">Quantidade de aulas</label>
+            <input id="pacote-quantidade" name="quantidade_aulas" type="number" inputmode="numeric" min="1" max="50" step="1" required>
+          </div>
+          <div class="campo">
+            <label for="pacote-valor">Valor (R$)</label>
+            <input id="pacote-valor" name="valor" type="text" inputmode="decimal" placeholder="400,00" autocomplete="off" required>
+          </div>
+        </div>
+
+        <div class="campos-lado-a-lado">
+          <div class="campo">
+            <label for="pacote-inicio">Data da compra</label>
+            <input id="pacote-inicio" name="inicio" type="date" required>
+          </div>
+          <div class="campo">
+            <label for="pacote-forma">Forma de pagamento</label>
+            <select id="pacote-forma" name="forma_pagamento">
+              <option value="pix">Pix</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="transferencia">Transferência</option>
+              <option value="cartao">Cartão</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="pacote-saldo" class="info-saldo" hidden></p>
+
+        <label class="check" for="pacote-pago">
+          <input id="pacote-pago" name="pago" type="checkbox">
+          Pacote pago
+        </label>
+        <div id="campo-pago-em" class="campo" hidden>
+          <label for="pacote-pago-em">Data do pagamento</label>
+          <input id="pacote-pago-em" name="pago_em" type="date">
+        </div>
+
+        <p id="pacote-erro" class="mensagem-erro" role="alert"></p>
+
+        <div class="dialogo-rodape">
+          <button type="button" id="botao-excluir-pacote" class="botao botao-perigo-texto" hidden>Excluir pacote</button>
           <div class="dialogo-rodape-acoes">
             <button type="button" class="botao botao-secundario" data-fechar>Cancelar</button>
             <button type="submit" class="botao botao-primario">Salvar</button>

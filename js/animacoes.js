@@ -32,6 +32,12 @@ export function entrarEmCascata(elementos) {
   animate(elementos, { opacity: [0, 1], y: [12, 0] }, { duration: 0.35, ease: 'easeOut', delay: stagger(0.035) });
 }
 
+// Barras de saldo enchem da esquerda para a direita
+export function encherBarras(barras) {
+  if (semMovimento() || !barras.length) return;
+  animate(barras, { scaleX: [0, 1] }, { duration: 0.6, ease: 'easeOut', delay: stagger(0.035, { startDelay: 0.1 }) });
+}
+
 // Pisca em verde-claro o item que acabou de ser salvo
 export function destacar(elemento) {
   if (!elemento || semMovimento()) return;

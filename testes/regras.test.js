@@ -14,6 +14,9 @@ import {
   saldoAcabando,
   traduzirErroBanco,
   ERRO_GENERICO,
+  validarReducaoAulas,
+  pacotesAcabando,
+  filtrarPacotes,
 } from '../js/regras.js';
 
 test('CA01 · nome com 1 letra é recusado; 2 a 80 é aceito', () => {
@@ -110,4 +113,35 @@ test('mensagem levantada por trigger passa direto; erro desconhecido não mostra
   assert.equal(traduzirErroBanco({ code: 'P0001', message: MENSAGENS.excluirAluno }), MENSAGENS.excluirAluno);
   assert.equal(traduzirErroBanco({ code: 'XX000', message: 'internal error at line 42' }), ERRO_GENERICO);
   assert.equal(traduzirErroBanco(undefined), ERRO_GENERICO);
+});
+
+test('pacote não pode ficar com menos aulas do que as já usadas', () => {
+  assert.equal(validarReducaoAulas(4, 5), 'O pacote já tem 5 aulas usadas.');
+  assert.equal(validarReducaoAulas(5, 5), null);
+  assert.equal(traduzirErroBanco({ code: 'P0001', message: 'O pacote já tem 5 aulas usadas.' }), 'O pacote já tem 5 aulas usadas.');
+});
+
+// Pacotes como vêm da view pacotes_com_saldo
+const pacote = (id, aluno_id, aluno_nome, saldo, pago) => ({ id, aluno_id, aluno_nome, saldo, pago });
+
+test('CA07 · "saldo acabando" mostra saldo 2 ou menos, mas não aluno que já renovou', () => {
+  const pacotes = [
+    pacote('p1', 'ana', 'Ana', 2, true),     // acabando
+    pacote('p2', 'bruno', 'Bruno', 0, true), // acabou, mas o Bruno já comprou outro...
+    pacote('p3', 'bruno', 'Bruno', 8, false), // ...com saldo
+    pacote('p4', 'caio', 'Caio', 3, true),   // ainda tem saldo
+  ];
+  assert.deepEqual(pacotesAcabando(pacotes).map((p) => p.id), ['p1']);
+  assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'acabando' }).map((p) => p.id), ['p1']);
+});
+
+test('RF07 · busca pelo nome ignora acento e maiúscula; filtros pago e em aberto', () => {
+  const pacotes = [
+    pacote('p1', 'joao', 'João Pedro', 5, true),
+    pacote('p2', 'ana', 'Ana', 5, false),
+  ];
+  assert.deepEqual(filtrarPacotes(pacotes, { busca: 'JOAO' }).map((p) => p.id), ['p1']);
+  assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'pagos' }).map((p) => p.id), ['p1']);
+  assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'abertos' }).map((p) => p.id), ['p2']);
+  assert.equal(filtrarPacotes(pacotes).length, 2);
 });

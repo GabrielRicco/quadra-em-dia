@@ -6,6 +6,12 @@ import {
   el, mostrarAviso, travarBotoes, confirmar, avisar, abrirDialogo, fecharDialogo,
 } from './tela.js';
 import { entrarEmCascata, destacar, aoPressionar } from './animacoes.js';
+import { iniciais } from './formato.js';
+
+// Avisa as outras abas (Pacotes) que algo mudou nos alunos
+function avisarMudanca() {
+  document.dispatchEvent(new Event('alunos-mudaram'));
+}
 
 export const NIVEIS = {
   iniciante: 'Iniciante',
@@ -79,12 +85,6 @@ function textoContagem() {
   return inativos ? `${texto} · ${inativos} ${inativos === 1 ? 'inativo' : 'inativos'}` : texto;
 }
 
-function iniciais(nome) {
-  const partes = nome.trim().split(/\s+/);
-  const ultima = partes.length > 1 ? partes.at(-1)[0] : '';
-  return (partes[0][0] + ultima).toUpperCase();
-}
-
 // Cada linha é um botão: tocar abre a edição (onde também fica o "Excluir")
 function itemDoAluno(aluno) {
   const detalhe = [NIVEIS[aluno.nivel], aluno.telefone].filter(Boolean).join(' · ');
@@ -153,6 +153,7 @@ form.addEventListener('submit', async (evento) => {
   fecharDialogo(dialogo);
   avisar(editando ? 'Aluno atualizado.' : 'Aluno cadastrado.');
   await carregarAlunos(data.id);
+  avisarMudanca();
 });
 
 // ---------- Excluir (RN06) ----------
@@ -194,6 +195,7 @@ async function excluirAluno(aluno) {
   fecharDialogo(dialogo);
   avisar(`${aluno.nome} foi excluído.`);
   await carregarAlunos();
+  avisarMudanca();
 }
 
 async function oferecerInativar(aluno, mensagem) {
@@ -212,4 +214,5 @@ async function oferecerInativar(aluno, mensagem) {
   fecharDialogo(dialogo);
   avisar(`${aluno.nome} agora está inativo.`);
   await carregarAlunos(aluno.id);
+  avisarMudanca();
 }

@@ -81,6 +81,38 @@ export function saldoAcabando(saldo) {
   return saldo <= LIMITE_SALDO_ACABANDO;
 }
 
+// Complemento da RN02: o pacote não pode ficar com menos aulas do que as já usadas
+// (o trigger validar_pacote do banco levanta a mesma mensagem)
+export function validarReducaoAulas(quantidadeNova, usadas) {
+  return quantidadeNova < usadas ? `O pacote já tem ${usadas} aulas usadas.` : null;
+}
+
+// CA07 e RF08 · pacotes com saldo acabando. Aluno que já comprou outro pacote
+// com saldo sobrando não aparece: o pacote antigo dele já foi renovado.
+export function pacotesAcabando(pacotes) {
+  const renovaram = new Set(
+    pacotes.filter((p) => !saldoAcabando(p.saldo)).map((p) => p.aluno_id),
+  );
+  return pacotes.filter((p) => saldoAcabando(p.saldo) && !renovaram.has(p.aluno_id));
+}
+
+// RF07 · busca pelo nome do aluno (sem diferença de acento e maiúscula) e filtro
+function normalizar(texto) {
+  return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+export function filtrarPacotes(pacotes, { busca = '', filtro = 'todos' } = {}) {
+  const termo = normalizar(busca);
+  const acabando = new Set(pacotesAcabando(pacotes));
+  return pacotes.filter((p) => {
+    if (termo && !normalizar(p.aluno_nome).includes(termo)) return false;
+    if (filtro === 'abertos') return !p.pago;
+    if (filtro === 'pagos') return p.pago;
+    if (filtro === 'acabando') return acabando.has(p);
+    return true;
+  });
+}
+
 // ---------- Erros do banco → mensagens do SPEC ----------
 // Os triggers já levantam a mensagem exata. Os checks e o exclude chegam com o
 // nome da restrição, que trocamos pela mensagem do critério de aceitação.

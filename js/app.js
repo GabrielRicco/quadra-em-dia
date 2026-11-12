@@ -2,7 +2,10 @@
 // Cada aba tem o próprio arquivo (js/alunos.js, ...).
 import { supabase } from './supabase.js';
 import { carregarAlunos, limparAlunos } from './alunos.js';
-import { entrarLogin, entrarSecao, entrarEmCascata, aoPressionar } from './animacoes.js';
+import { carregarPacotes, limparPacotes } from './pacotes.js';
+import {
+  entrarLogin, entrarSecao, entrarEmCascata, encherBarras, aoPressionar,
+} from './animacoes.js';
 
 const telaLogin = document.getElementById('tela-login');
 const telaApp = document.getElementById('tela-app');
@@ -91,6 +94,7 @@ function mostrarAba() {
   const secao = document.querySelector(`[data-secao="${aba}"]`);
   entrarSecao(secao);
   entrarEmCascata(secao.querySelectorAll('.lista > li'));
+  encherBarras(secao.querySelectorAll('.barra-cheia'));
 }
 
 window.addEventListener('hashchange', mostrarAba);
@@ -103,10 +107,12 @@ function mostrarDataDeHoje() {
 // ---------- Dados de cada aba ----------
 function carregarDados() {
   carregarAlunos();
+  carregarPacotes();
 }
 
 function limparDados() {
   limparAlunos();
+  limparPacotes();
 }
 
 // ---------- Troca de tela conforme a sessão ----------

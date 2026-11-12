@@ -15,13 +15,16 @@ index.html          tela de login e app
 style.css
 js/config.js        URL do projeto e chave PUBLICÁVEL do Supabase
 js/supabase.js      cria o cliente do Supabase (único lugar)
-js/regras.js        regras de negócio e tradução dos erros do banco, como funções puras (sem DOM, sem rede)
+js/regras.js        regras de negócio, filtros e tradução dos erros do banco, como funções puras (sem DOM, sem rede)
+js/formato.js       reais e datas no formato brasileiro, leitura de valor digitado (funções puras)
 js/tela.js          utilitários de tela: el() monta elementos só com texto, confirmar() e avisar()
 js/animacoes.js     todas as animações (Motion); respeita prefers-reduced-motion
 js/app.js           login, abas e carga dos dados ao entrar
 js/alunos.js        aba Alunos (uma aba por arquivo)
+js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca e filtros
 sql/schema.sql      tabelas, constraints, triggers e políticas de RLS
 testes/regras.test.js
+testes/formato.test.js
 package.json        "type": "module" e script "test"
 ```
 
