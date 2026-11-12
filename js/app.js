@@ -92,7 +92,7 @@ window.addEventListener('hashchange', mostrarAba);
 
 function mostrarDataDeHoje() {
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  document.getElementById('titulo-hoje').textContent = `Hoje, ${hoje}`;
+  document.getElementById('data-hoje').textContent = hoje.charAt(0).toUpperCase() + hoje.slice(1);
 }
 
 // ---------- Dados de cada aba ----------

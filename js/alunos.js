@@ -2,7 +2,7 @@
 // A tela avisa com as regras de js/regras.js; o banco repete as mesmas regras.
 import { supabase } from './supabase.js';
 import { validarAluno, validarExclusaoAluno, traduzirErroBanco, MENSAGENS } from './regras.js';
-import { el, mostrarAviso, travarBotoes } from './tela.js';
+import { el, mostrarAviso, travarBotoes, confirmar, avisar } from './tela.js';
 
 export const NIVEIS = {
   iniciante: 'Iniciante',
@@ -12,12 +12,13 @@ export const NIVEIS = {
 
 const lista = document.getElementById('lista-alunos');
 const vazio = document.getElementById('alunos-vazio');
-const aviso = document.getElementById('alunos-aviso');
+const contagem = document.getElementById('alunos-contagem');
 const botaoNovo = document.getElementById('botao-novo-aluno');
 const dialogo = document.getElementById('dialogo-aluno');
 const tituloDialogo = document.getElementById('dialogo-aluno-titulo');
 const form = document.getElementById('form-aluno');
 const erroForm = document.getElementById('aluno-erro');
+const botaoExcluir = document.getElementById('botao-excluir-aluno');
 const campos = {
   nome: document.getElementById('aluno-nome'),
   telefone: document.getElementById('aluno-telefone'),
@@ -37,7 +38,7 @@ export async function carregarAlunos() {
   const { data, error } = await supabase
     .from('alunos')
     .select('id, nome, telefone, nivel, ativo, observacoes');
-  if (error) return mostrarAviso(aviso, traduzirErroBanco(error));
+  if (error) return avisar(traduzirErroBanco(error), 'erro');
   alunos = data.sort(compararAlunos);
   desenhar();
 }
@@ -47,7 +48,7 @@ export function limparAlunos() {
   alunos = [];
   lista.replaceChildren();
   vazio.hidden = true;
-  mostrarAviso(aviso, '');
+  contagem.textContent = '';
 }
 
 // Ativos primeiro; depois por nome, com acentos em português
@@ -58,33 +59,41 @@ function compararAlunos(a, b) {
 
 function desenhar() {
   vazio.hidden = alunos.length > 0;
-  lista.replaceChildren(...alunos.map(cartaoDoAluno));
+  contagem.textContent = textoContagem();
+  lista.replaceChildren(...alunos.map(itemDoAluno));
 }
 
-function cartaoDoAluno(aluno) {
+function textoContagem() {
+  if (!alunos.length) return '';
+  const ativos = alunos.filter((a) => a.ativo).length;
+  const inativos = alunos.length - ativos;
+  const texto = `${ativos} ${ativos === 1 ? 'aluno ativo' : 'alunos ativos'}`;
+  return inativos ? `${texto} · ${inativos} ${inativos === 1 ? 'inativo' : 'inativos'}` : texto;
+}
+
+function iniciais(nome) {
+  const partes = nome.trim().split(/\s+/);
+  const ultima = partes.length > 1 ? partes.at(-1)[0] : '';
+  return (partes[0][0] + ultima).toUpperCase();
+}
+
+// Cada linha é um botão: tocar abre a edição (onde também fica o "Excluir")
+function itemDoAluno(aluno) {
   const detalhe = [NIVEIS[aluno.nivel], aluno.telefone].filter(Boolean).join(' · ');
-  return el('li', { class: aluno.ativo ? 'cartao' : 'cartao cartao-inativo' },
-    el('div', { class: 'cartao-info' },
-      el('p', { class: 'cartao-titulo' },
-        aluno.nome,
-        aluno.ativo ? null : el('span', { class: 'etiqueta' }, 'Inativo'),
+  return el('li', {},
+    el('button', {
+      type: 'button',
+      class: aluno.ativo ? 'item' : 'item item-inativo',
+      onclick: () => abrirFormulario(aluno),
+    },
+      el('span', { class: 'avatar', 'aria-hidden': 'true' }, iniciais(aluno.nome)),
+      el('span', { class: 'item-texto' },
+        el('span', { class: 'item-titulo' },
+          aluno.nome,
+          aluno.ativo ? null : el('span', { class: 'etiqueta' }, 'Inativo'),
+        ),
+        el('span', { class: 'item-detalhe' }, detalhe),
       ),
-      el('p', { class: 'cartao-detalhe' }, detalhe),
-      aluno.observacoes ? el('p', { class: 'cartao-obs' }, aluno.observacoes) : null,
-    ),
-    el('div', { class: 'cartao-acoes' },
-      el('button', {
-        type: 'button',
-        class: 'botao-secundario botao-pequeno',
-        'aria-label': `Editar ${aluno.nome}`,
-        onclick: () => abrirFormulario(aluno),
-      }, 'Editar'),
-      el('button', {
-        type: 'button',
-        class: 'botao-perigo botao-pequeno',
-        'aria-label': `Excluir ${aluno.nome}`,
-        onclick: () => excluirAluno(aluno),
-      }, 'Excluir'),
     ),
   );
 }
@@ -98,6 +107,7 @@ function abrirFormulario(aluno = null) {
   campos.nivel.value = aluno?.nivel ?? 'iniciante';
   campos.observacoes.value = aluno?.observacoes ?? '';
   campos.ativo.checked = aluno?.ativo ?? true;
+  botaoExcluir.hidden = !aluno;
   mostrarAviso(erroForm, '');
   dialogo.showModal();
   campos.nome.focus();
@@ -123,52 +133,74 @@ form.addEventListener('submit', async (evento) => {
   }
 
   // professor_id não vai daqui: o banco preenche com o usuário logado (auth.uid())
+  const editando = Boolean(editandoId);
   travarBotoes(form, true);
-  const { error } = editandoId
+  const { error } = editando
     ? await supabase.from('alunos').update(dados).eq('id', editandoId)
     : await supabase.from('alunos').insert(dados);
   travarBotoes(form, false);
 
   if (error) return mostrarAviso(erroForm, traduzirErroBanco(error));
   dialogo.close();
-  mostrarAviso(aviso, editandoId ? 'Aluno atualizado.' : 'Aluno cadastrado.', 'ok');
+  avisar(editando ? 'Aluno atualizado.' : 'Aluno cadastrado.');
   await carregarAlunos();
 });
 
 // ---------- Excluir (RN06) ----------
-async function excluirAluno(aluno) {
-  const confirmou = confirm(
-    `Excluir ${aluno.nome}? Os pacotes e as aulas deste aluno também serão apagados.`,
-  );
-  if (!confirmou) return;
+botaoExcluir.addEventListener('click', () => {
+  const aluno = alunos.find((a) => a.id === editandoId);
+  if (aluno) excluirAluno(aluno);
+});
 
+async function excluirAluno(aluno) {
+  mostrarAviso(erroForm, '');
+
+  // RN06 na tela: checa antes de perguntar "tem certeza?"
   const { data: pacotes, error } = await supabase
     .from('pacotes')
     .select('pago')
     .eq('aluno_id', aluno.id);
-  if (error) return mostrarAviso(aviso, traduzirErroBanco(error));
+  if (error) return mostrarAviso(erroForm, traduzirErroBanco(error));
 
-  const bloqueio = validarExclusaoAluno(pacotes); // RN06 na tela
+  const bloqueio = validarExclusaoAluno(pacotes);
   if (bloqueio) return oferecerInativar(aluno, bloqueio);
 
+  const confirmou = await confirmar({
+    titulo: `Excluir ${aluno.nome}?`,
+    mensagem: 'Os pacotes e as aulas deste aluno também serão apagados. Não dá para desfazer.',
+    botao: 'Excluir',
+    perigo: true,
+  });
+  if (!confirmou) return;
+
+  travarBotoes(form, true);
   const { error: erroExclusao } = await supabase.from('alunos').delete().eq('id', aluno.id);
+  travarBotoes(form, false);
   if (erroExclusao) {
     const mensagem = traduzirErroBanco(erroExclusao);
     // o banco também barra (trigger), caso a tela esteja desatualizada
     if (mensagem === MENSAGENS.excluirAluno) return oferecerInativar(aluno, mensagem);
-    return mostrarAviso(aviso, mensagem);
+    return mostrarAviso(erroForm, mensagem);
   }
-  mostrarAviso(aviso, `${aluno.nome} foi excluído.`, 'ok');
+  dialogo.close();
+  avisar(`${aluno.nome} foi excluído.`);
   await carregarAlunos();
 }
 
 async function oferecerInativar(aluno, mensagem) {
-  mostrarAviso(aviso, mensagem);
-  if (!aluno.ativo) return;
-  if (!confirm(`${mensagem}\n\nMarcar ${aluno.nome} como inativo agora?`)) return;
+  if (!aluno.ativo) return mostrarAviso(erroForm, mensagem);
+
+  const inativar = await confirmar({
+    titulo: 'Não dá para excluir',
+    mensagem, // mensagem exata do CA06
+    botao: 'Marcar como inativo',
+    cancelar: 'Agora não',
+  });
+  if (!inativar) return;
 
   const { error } = await supabase.from('alunos').update({ ativo: false }).eq('id', aluno.id);
-  if (error) return mostrarAviso(aviso, traduzirErroBanco(error));
-  mostrarAviso(aviso, `${aluno.nome} agora está inativo.`, 'ok');
+  if (error) return mostrarAviso(erroForm, traduzirErroBanco(error));
+  dialogo.close();
+  avisar(`${aluno.nome} agora está inativo.`);
   await carregarAlunos();
 }
