@@ -2,6 +2,7 @@
 // Cada aba tem o próprio arquivo (js/alunos.js, ...).
 import { supabase } from './supabase.js';
 import { carregarAlunos, limparAlunos } from './alunos.js';
+import { entrarLogin, entrarSecao, entrarEmCascata, aoPressionar } from './animacoes.js';
 
 const telaLogin = document.getElementById('tela-login');
 const telaApp = document.getElementById('tela-app');
@@ -86,6 +87,10 @@ function mostrarAba() {
     if (link.dataset.aba === aba) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   });
+
+  const secao = document.querySelector(`[data-secao="${aba}"]`);
+  entrarSecao(secao);
+  entrarEmCascata(secao.querySelectorAll('.lista > li'));
 }
 
 window.addEventListener('hashchange', mostrarAba);
@@ -105,27 +110,33 @@ function limparDados() {
 }
 
 // ---------- Troca de tela conforme a sessão ----------
-let usuarioAtual = null;
+// undefined no começo, para o primeiro evento (com ou sem sessão) sempre desenhar a tela
+let usuarioAtual;
 
 function atualizarTela(sessao) {
+  // A renovação do token também dispara este evento: se a pessoa é a mesma, nada muda
+  const novoUsuario = sessao?.user.id ?? null;
+  if (novoUsuario === usuarioAtual) return;
+  usuarioAtual = novoUsuario;
+
   const logado = Boolean(sessao);
   telaLogin.hidden = logado;
   telaApp.hidden = !logado;
+  limparDados();
+
   if (logado) {
     usuarioEmail.textContent = sessao.user.email;
     mostrarDataDeHoje();
     mostrarAba();
+    // Fora do callback de autenticação: chamar o Supabase dentro dele pode travar a sessão
+    setTimeout(carregarDados, 0);
   } else {
     formLogin.reset();
+    entrarLogin(document.querySelector('.login-cartao'), document.querySelector('.login .marca-bola'));
   }
-
-  // Só recarrega quando muda a pessoa logada (a renovação do token também dispara este evento)
-  const novoUsuario = sessao?.user.id ?? null;
-  if (novoUsuario === usuarioAtual) return;
-  usuarioAtual = novoUsuario;
-  limparDados();
-  // Fora do callback de autenticação: chamar o Supabase dentro dele pode travar a sessão
-  if (novoUsuario) setTimeout(carregarDados, 0);
 }
+
+// Botões e abas afundam um pouco ao toque (os itens das listas são ligados em cada aba)
+aoPressionar(document.querySelectorAll('.botao, .botao-icone, .abas a'));
 
 supabase.auth.onAuthStateChange((_evento, sessao) => atualizarTela(sessao));

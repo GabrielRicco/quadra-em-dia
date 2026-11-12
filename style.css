@@ -1,20 +1,29 @@
 /* =============================================================
-   Quadra em Dia · visual minimalista
+   Quadra em Dia · visual minimalista com topo verde
    Cores, raios e sombras só pelos tokens abaixo.
+   As animações ficam em js/animacoes.js (biblioteca Motion).
    ============================================================= */
 :root {
-  --cor-fundo: #f6f7f5;
+  --cor-fundo: #eef3ef;          /* sálvia */
   --cor-superficie: #ffffff;
   --cor-texto: #16181a;
-  --cor-suave: #626a66;          /* 5,6:1 sobre branco */
-  --cor-borda: #e3e6e2;
-  --cor-borda-forte: #cdd2cc;
+  --cor-suave: #5d6661;          /* 5,0:1 sobre o sálvia */
+  --cor-borda: #e1e7e2;
+  --cor-borda-forte: #cad2cb;
   --cor-hover: rgba(22, 24, 26, 0.04);
+
   --cor-primaria: #1d5a43;       /* verde da quadra · 8:1 com texto branco */
   --cor-primaria-escura: #164634;
-  --cor-primaria-clara: #e7f1ec;
+  --cor-primaria-clara: #e3efe8;
   --cor-anel: rgba(29, 90, 67, 0.18);
-  --cor-bola: #d7e94b;
+
+  --cor-sobre-verde: #ffffff;
+  --cor-sobre-verde-suave: rgba(255, 255, 255, 0.75);
+  --cor-sobre-verde-hover: rgba(255, 255, 255, 0.1);
+  --cor-sobre-verde-ativo: rgba(255, 255, 255, 0.16);
+
+  --cor-bola: #d7e94b;           /* amarelo da bolinha: ação principal sobre o verde */
+  --cor-bola-escura: #c5d83a;
   --cor-neutra-clara: #eef0ed;
   --cor-erro: #b42318;
   --cor-erro-escura: #912018;
@@ -23,8 +32,8 @@
   --fonte: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --raio: 14px;
   --raio-pequeno: 10px;
-  --sombra: 0 1px 2px rgba(16, 24, 20, 0.04), 0 1px 3px rgba(16, 24, 20, 0.05);
-  --sombra-alta: 0 16px 40px rgba(16, 24, 20, 0.16);
+  --sombra: 0 1px 2px rgba(16, 24, 20, 0.05), 0 4px 12px rgba(16, 24, 20, 0.05);
+  --sombra-alta: 0 16px 40px rgba(16, 24, 20, 0.18);
   --altura-abas: 4rem;
 }
 
@@ -90,6 +99,9 @@ h1, h2, h3, p { margin: 0; }
 .botao-primario { background: var(--cor-primaria); color: #fff; }
 .botao-primario:hover:not(:disabled) { background: var(--cor-primaria-escura); }
 
+.botao-destaque { background: var(--cor-bola); color: var(--cor-texto); font-weight: 600; }
+.botao-destaque:hover:not(:disabled) { background: var(--cor-bola-escura); }
+
 .botao-secundario {
   background: var(--cor-superficie);
   color: var(--cor-texto);
@@ -152,12 +164,12 @@ textarea { min-height: 5.5rem; resize: vertical; }
 select {
   appearance: none;
   padding-right: 2.25rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23626a66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235d6661' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 1rem;
 }
-input:hover, select:hover, textarea:hover { border-color: #b5bcb4; }
+input:hover, select:hover, textarea:hover { border-color: #b2bbb3; }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--cor-primaria);
@@ -184,36 +196,37 @@ input:focus, select:focus, textarea:focus {
 .mensagem-erro { color: var(--cor-erro); font-size: 0.9rem; font-weight: 500; }
 .mensagem-erro:empty { display: none; }
 
-/* ---------- Login ---------- */
+/* ---------- Login: cartão branco sobre o verde da quadra ---------- */
 .login {
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 1.5rem 1rem;
+  background:
+    radial-gradient(120% 70% at 50% 0%, #2b7457 0%, transparent 70%),
+    var(--cor-primaria-escura);
 }
 .login-cartao {
   width: min(100%, 25rem);
   padding: 2rem 1.75rem;
   background: var(--cor-superficie);
-  border: 1px solid var(--cor-borda);
-  border-radius: 18px;
-  box-shadow: var(--sombra);
+  border-radius: 20px;
+  box-shadow: var(--sombra-alta);
 }
 .login .marca { margin-bottom: 2rem; }
 .login-titulo { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; }
 .login-intro { margin: 0.5rem 0 1.75rem; color: var(--cor-suave); }
 .login .botao-secundario { margin-top: -0.25rem; }
 
-/* ---------- Topo e abas ---------- */
+/* ---------- Topo verde e abas ---------- */
 .topo {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(255, 255, 255, 0.85);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
-  backdrop-filter: saturate(180%) blur(12px);
-  border-bottom: 1px solid var(--cor-borda);
+  color: var(--cor-sobre-verde);
+  background: var(--cor-primaria);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .topo-interno {
   display: flex;
@@ -230,8 +243,13 @@ input:focus, select:focus, textarea:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.875rem;
-  color: var(--cor-suave);
+  color: var(--cor-sobre-verde-suave);
 }
+.topo .botao-fantasma { color: var(--cor-sobre-verde-suave); }
+.topo .botao-fantasma:hover:not(:disabled) { color: var(--cor-sobre-verde); background: var(--cor-sobre-verde-hover); }
+
+/* sobre o verde, o anel de foco é amarelo-bola */
+.topo :focus-visible, .secao-topo :focus-visible { outline-color: var(--cor-bola); }
 
 .abas { display: flex; gap: 0.25rem; }
 .abas a {
@@ -240,48 +258,58 @@ input:focus, select:focus, textarea:focus {
   gap: 0.45rem;
   padding: 0.45rem 0.8rem;
   border-radius: 8px;
-  color: var(--cor-suave);
+  color: var(--cor-sobre-verde-suave);
   text-decoration: none;
   font-size: 0.925rem;
   font-weight: 500;
   transition: background-color 0.15s, color 0.15s;
 }
-.abas a:hover { color: var(--cor-texto); background: var(--cor-hover); }
-.abas a[aria-current="page"] { color: var(--cor-primaria); background: var(--cor-primaria-clara); }
+.abas a:hover { color: var(--cor-sobre-verde); background: var(--cor-sobre-verde-hover); }
+.abas a[aria-current="page"] { color: var(--cor-sobre-verde); background: var(--cor-sobre-verde-ativo); }
 .abas svg { width: 1.1rem; height: 1.1rem; flex: none; }
 
 /* ---------- Conteúdo ---------- */
-.conteudo { max-width: 60rem; margin: 0 auto; padding: 2.25rem 1.25rem 4rem; }
+.conteudo { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem 4rem; }
 
+/* Faixa verde do título: ocupa a largura toda da tela (sombra + recorte)
+   e o conteúdo logo abaixo sobe um pouco por cima dela */
 .secao-topo {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  padding: 2rem 0 3.25rem;
+  margin-bottom: -1.75rem;
+  color: var(--cor-sobre-verde);
+  background: var(--cor-primaria);
+  box-shadow: 0 0 0 100vmax var(--cor-primaria);
+  clip-path: inset(0 -100vmax);
 }
 .titulo { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; }
-.subtitulo { margin-top: 0.2rem; font-size: 0.95rem; color: var(--cor-suave); }
+.subtitulo { margin-top: 0.2rem; font-size: 0.95rem; color: var(--cor-sobre-verde-suave); }
 
 .vazio {
+  position: relative;
+  z-index: 1;
   padding: 3rem 1.5rem;
   text-align: center;
   color: var(--cor-suave);
   background: var(--cor-superficie);
-  border: 1px dashed var(--cor-borda-forte);
   border-radius: var(--raio);
+  box-shadow: var(--sombra);
 }
 .vazio-titulo { margin-bottom: 0.25rem; font-weight: 600; color: var(--cor-texto); }
 
 /* ---------- Listas ---------- */
 .lista {
+  position: relative;
+  z-index: 1;
   list-style: none;
   margin: 0;
   padding: 0;
   overflow: hidden;
   background: var(--cor-superficie);
-  border: 1px solid var(--cor-borda);
   border-radius: var(--raio);
   box-shadow: var(--sombra);
 }
@@ -347,7 +375,7 @@ input:focus, select:focus, textarea:focus {
   vertical-align: 0.1em;
 }
 
-/* ---------- Modais ---------- */
+/* ---------- Modais (a entrada e a saída são animadas pela Motion) ---------- */
 .dialogo {
   width: min(100% - 2rem, 30rem);
   max-width: none;
@@ -361,8 +389,8 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--sombra-alta);
 }
 .dialogo-pequeno { width: min(100% - 2rem, 26rem); }
-.dialogo[open] { animation: aparecer 0.18s ease-out; }
-.dialogo::backdrop { background: rgba(16, 24, 20, 0.4); }
+.dialogo::backdrop { background: rgba(16, 24, 20, 0.45); }
+.dialogo[open]::backdrop { animation: esmaecer 0.2s ease-out; }
 
 .dialogo > form, .dialogo-conteudo { padding: 1.5rem; }
 .dialogo h2 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.02em; }
@@ -385,6 +413,8 @@ input:focus, select:focus, textarea:focus {
 .formulario .dialogo-rodape { margin-top: 0.25rem; }
 .dialogo-rodape-acoes { display: flex; gap: 0.75rem; margin-left: auto; }
 
+@keyframes esmaecer { from { opacity: 0; } }
+
 /* ---------- Avisos rápidos ---------- */
 .avisos {
   position: fixed;
@@ -405,26 +435,14 @@ input:focus, select:focus, textarea:focus {
   background: var(--cor-texto);
   border-radius: var(--raio-pequeno);
   box-shadow: var(--sombra-alta);
-  animation: aparecer 0.2s ease-out;
 }
 .aviso-erro { background: var(--cor-erro); }
 
-@keyframes aparecer {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes subir {
-  from { transform: translateY(100%); }
-  to { transform: none; }
-}
-
 /* ---------- Celular ---------- */
 @media (max-width: 40rem) {
-  /* backdrop-filter prenderia a barra de abas (position: fixed) dentro do topo */
-  .topo { background: var(--cor-superficie); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .usuario { display: none; }
 
-  /* abas viram barra inferior, perto do polegar */
+  /* abas viram barra inferior branca, perto do polegar */
   .abas {
     position: fixed;
     left: 0;
@@ -437,6 +455,7 @@ input:focus, select:focus, textarea:focus {
     padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
     background: var(--cor-superficie);
     border-top: 1px solid var(--cor-borda);
+    box-shadow: 0 -4px 16px rgba(16, 24, 20, 0.05);
   }
   .abas a {
     flex-direction: column;
@@ -444,15 +463,19 @@ input:focus, select:focus, textarea:focus {
     padding: 0.4rem 0.25rem;
     font-size: 0.75rem;
     border-radius: 10px;
+    color: var(--cor-suave);
   }
-  .abas a[aria-current="page"] { background: transparent; }
+  .abas a:hover { color: var(--cor-texto); background: var(--cor-hover); }
+  .abas a[aria-current="page"] { color: var(--cor-primaria); background: transparent; }
   .abas a[aria-current="page"] svg { stroke-width: 2.25; }
   .abas svg { width: 1.4rem; height: 1.4rem; }
+  .topo .abas :focus-visible { outline-color: var(--cor-primaria); }
 
-  .conteudo { padding: 1.5rem 1rem calc(var(--altura-abas) + 2.5rem + env(safe-area-inset-bottom, 0px)); }
+  .conteudo { padding: 0 1rem calc(var(--altura-abas) + 2.5rem + env(safe-area-inset-bottom, 0px)); }
+  .secao-topo { padding: 1.5rem 0 3rem; }
   .titulo { font-size: 1.5rem; }
 
-  /* modais abrem de baixo, como no app do celular */
+  /* modais encostam embaixo, como nos apps de celular */
   .dialogo, .dialogo-pequeno {
     width: 100%;
     max-height: 92dvh;
@@ -460,7 +483,6 @@ input:focus, select:focus, textarea:focus {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     border-radius: 20px 20px 0 0;
   }
-  .dialogo[open] { animation: subir 0.22s ease-out; }
   .dialogo-rodape-acoes { width: 100%; }
   .dialogo-rodape-acoes .botao { flex: 1; }
 

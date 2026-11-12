@@ -2,7 +2,10 @@
 // A tela avisa com as regras de js/regras.js; o banco repete as mesmas regras.
 import { supabase } from './supabase.js';
 import { validarAluno, validarExclusaoAluno, traduzirErroBanco, MENSAGENS } from './regras.js';
-import { el, mostrarAviso, travarBotoes, confirmar, avisar } from './tela.js';
+import {
+  el, mostrarAviso, travarBotoes, confirmar, avisar, abrirDialogo, fecharDialogo,
+} from './tela.js';
+import { entrarEmCascata, destacar, aoPressionar } from './animacoes.js';
 
 export const NIVEIS = {
   iniciante: 'Iniciante',
@@ -34,13 +37,14 @@ export function listaDeAlunos() {
   return alunos;
 }
 
-export async function carregarAlunos() {
+// destaqueId: aluno que acabou de ser salvo (pisca em verde em vez da lista entrar de novo)
+export async function carregarAlunos(destaqueId = null) {
   const { data, error } = await supabase
     .from('alunos')
     .select('id, nome, telefone, nivel, ativo, observacoes');
   if (error) return avisar(traduzirErroBanco(error), 'erro');
   alunos = data.sort(compararAlunos);
-  desenhar();
+  desenhar(destaqueId);
 }
 
 // Ao sair ou trocar de conta, nada da conta anterior fica na tela (CA09)
@@ -57,10 +61,14 @@ function compararAlunos(a, b) {
   return a.nome.localeCompare(b.nome, 'pt-BR');
 }
 
-function desenhar() {
+function desenhar(destaqueId) {
   vazio.hidden = alunos.length > 0;
   contagem.textContent = textoContagem();
   lista.replaceChildren(...alunos.map(itemDoAluno));
+  aoPressionar(lista.querySelectorAll('.item'), 0.985);
+
+  if (destaqueId) destacar(lista.querySelector(`[data-id="${CSS.escape(destaqueId)}"]`));
+  else entrarEmCascata(lista.children);
 }
 
 function textoContagem() {
@@ -84,6 +92,7 @@ function itemDoAluno(aluno) {
     el('button', {
       type: 'button',
       class: aluno.ativo ? 'item' : 'item item-inativo',
+      'data-id': aluno.id,
       onclick: () => abrirFormulario(aluno),
     },
       el('span', { class: 'avatar', 'aria-hidden': 'true' }, iniciais(aluno.nome)),
@@ -109,7 +118,7 @@ function abrirFormulario(aluno = null) {
   campos.ativo.checked = aluno?.ativo ?? true;
   botaoExcluir.hidden = !aluno;
   mostrarAviso(erroForm, '');
-  dialogo.showModal();
+  abrirDialogo(dialogo);
   campos.nome.focus();
 }
 
@@ -135,15 +144,15 @@ form.addEventListener('submit', async (evento) => {
   // professor_id não vai daqui: o banco preenche com o usuário logado (auth.uid())
   const editando = Boolean(editandoId);
   travarBotoes(form, true);
-  const { error } = editando
-    ? await supabase.from('alunos').update(dados).eq('id', editandoId)
-    : await supabase.from('alunos').insert(dados);
+  const { data, error } = editando
+    ? await supabase.from('alunos').update(dados).eq('id', editandoId).select('id').single()
+    : await supabase.from('alunos').insert(dados).select('id').single();
   travarBotoes(form, false);
 
   if (error) return mostrarAviso(erroForm, traduzirErroBanco(error));
-  dialogo.close();
+  fecharDialogo(dialogo);
   avisar(editando ? 'Aluno atualizado.' : 'Aluno cadastrado.');
-  await carregarAlunos();
+  await carregarAlunos(data.id);
 });
 
 // ---------- Excluir (RN06) ----------
@@ -182,7 +191,7 @@ async function excluirAluno(aluno) {
     if (mensagem === MENSAGENS.excluirAluno) return oferecerInativar(aluno, mensagem);
     return mostrarAviso(erroForm, mensagem);
   }
-  dialogo.close();
+  fecharDialogo(dialogo);
   avisar(`${aluno.nome} foi excluído.`);
   await carregarAlunos();
 }
@@ -200,7 +209,7 @@ async function oferecerInativar(aluno, mensagem) {
 
   const { error } = await supabase.from('alunos').update({ ativo: false }).eq('id', aluno.id);
   if (error) return mostrarAviso(erroForm, traduzirErroBanco(error));
-  dialogo.close();
+  fecharDialogo(dialogo);
   avisar(`${aluno.nome} agora está inativo.`);
-  await carregarAlunos();
+  await carregarAlunos(aluno.id);
 }
