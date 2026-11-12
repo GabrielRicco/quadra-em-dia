@@ -115,7 +115,7 @@
 
           <div class="ferramentas">
             <label for="busca-pacotes" class="visualmente-oculto">Buscar pacote pelo nome do aluno</label>
-            <input id="busca-pacotes" type="search" class="busca" placeholder="Buscar pelo nome do aluno" autocomplete="off">
+            <input id="busca-pacotes" type="search" class="campo-lupa busca" placeholder="Buscar pelo nome do aluno" autocomplete="off">
             <div class="chips" role="radiogroup" aria-label="Filtrar pacotes">
               <label class="chip"><input type="radio" name="filtro-pacotes" value="todos" checked><span>Todos</span></label>
               <label class="chip"><input type="radio" name="filtro-pacotes" value="abertos"><span>Em aberto</span></label>
@@ -210,7 +210,12 @@
 
         <div class="campo">
           <label for="pacote-aluno">Aluno</label>
-          <select id="pacote-aluno" name="aluno_id" required></select>
+          <div class="autocompletar">
+            <input id="pacote-aluno" type="text" class="campo-lupa" role="combobox"
+                   aria-autocomplete="list" aria-expanded="false" aria-controls="pacote-aluno-opcoes"
+                   placeholder="Digite o nome do aluno" autocomplete="off" required>
+            <ul id="pacote-aluno-opcoes" class="opcoes" role="listbox" aria-label="Alunos" hidden></ul>
+          </div>
         </div>
 
         <div class="campos-lado-a-lado">

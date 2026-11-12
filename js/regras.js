@@ -2,6 +2,7 @@
 // Funções puras: sem DOM e sem rede, para serem testadas com `npm test`.
 // Cada validação devolve a mensagem de erro exata do SPEC, ou null se está tudo certo.
 // O banco (sql/schema.sql) repete as mesmas regras: a tela avisa, o banco garante.
+import { normalizarTexto } from './formato.js';
 
 export const MENSAGENS = {
   nome: 'O nome precisa ter entre 2 e 80 caracteres.',
@@ -97,15 +98,11 @@ export function pacotesAcabando(pacotes) {
 }
 
 // RF07 · busca pelo nome do aluno (sem diferença de acento e maiúscula) e filtro
-function normalizar(texto) {
-  return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-}
-
 export function filtrarPacotes(pacotes, { busca = '', filtro = 'todos' } = {}) {
-  const termo = normalizar(busca);
+  const termo = normalizarTexto(busca);
   const acabando = new Set(pacotesAcabando(pacotes));
   return pacotes.filter((p) => {
-    if (termo && !normalizar(p.aluno_nome).includes(termo)) return false;
+    if (termo && !normalizarTexto(p.aluno_nome).includes(termo)) return false;
     if (filtro === 'abertos') return !p.pago;
     if (filtro === 'pagos') return p.pago;
     if (filtro === 'acabando') return acabando.has(p);

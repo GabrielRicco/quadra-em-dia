@@ -37,6 +37,11 @@ export function dataISO(data) {
   return `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}`;
 }
 
+// "  João ÁVILA " → "joao avila": para buscar sem ligar para acento e maiúscula
+export function normalizarTexto(texto) {
+  return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
 // "Ana Clara Souza" → "AS" (avatar das listas)
 export function iniciais(nome) {
   const partes = String(nome ?? '').trim().split(/\s+/).filter(Boolean);

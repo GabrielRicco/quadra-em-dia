@@ -8,7 +8,13 @@ import {
   formatarData,
   dataISO,
   iniciais,
+  normalizarTexto,
 } from '../js/formato.js';
+
+test('busca ignora acento, maiúscula e espaço nas pontas', () => {
+  assert.equal(normalizarTexto('  João ÁVILA '), 'joao avila');
+  assert.equal(normalizarTexto(null), '');
+});
 
 test('lê valor digitado do jeito brasileiro', () => {
   assert.equal(lerValorEmReais('400'), 400);

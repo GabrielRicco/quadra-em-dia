@@ -32,6 +32,12 @@ export function entrarEmCascata(elementos) {
   animate(elementos, { opacity: [0, 1], y: [12, 0] }, { duration: 0.35, ease: 'easeOut', delay: stagger(0.035) });
 }
 
+// Lista de sugestões do autocompletar desce rapidinho
+export function mostrarLista(lista) {
+  if (semMovimento()) return;
+  animate(lista, { opacity: [0, 1], y: [-6, 0] }, { duration: 0.15, ease: 'easeOut' });
+}
+
 // Barras de saldo enchem da esquerda para a direita
 export function encherBarras(barras) {
   if (semMovimento() || !barras.length) return;

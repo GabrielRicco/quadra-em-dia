@@ -13,7 +13,8 @@ import {
   el, mostrarAviso, travarBotoes, confirmar, avisar, abrirDialogo, fecharDialogo,
 } from './tela.js';
 import { entrarEmCascata, destacar, aoPressionar, encherBarras } from './animacoes.js';
-import { listaDeAlunos } from './alunos.js';
+import { listaDeAlunos, NIVEIS } from './alunos.js';
+import { criarAutocompletar } from './autocompletar.js';
 
 const lista = document.getElementById('lista-pacotes');
 const vazio = document.getElementById('pacotes-vazio');
@@ -147,17 +148,13 @@ radiosFiltro.forEach((radio) => radio.addEventListener('change', () => {
 }));
 
 // ---------- Criar e editar ----------
-function opcoesDeAluno(pacote) {
-  // Novo pacote: só alunos ativos. Edição: o aluno do pacote, mesmo inativo (o campo fica travado).
-  if (pacote) {
-    return [el('option', { value: pacote.aluno_id }, pacote.aluno_nome)];
-  }
-  const ativos = listaDeAlunos().filter((a) => a.ativo);
-  return [
-    el('option', { value: '', disabled: true, selected: true }, 'Escolha o aluno'),
-    ...ativos.map((a) => el('option', { value: a.id }, a.nome)),
-  ];
-}
+// Novo pacote: só alunos ativos aparecem nas sugestões
+const autocompletarAluno = criarAutocompletar(campos.aluno, {
+  opcoes: () => listaDeAlunos()
+    .filter((a) => a.ativo)
+    .map((a) => ({ id: a.id, nome: a.nome, detalhe: NIVEIS[a.nivel] })),
+  textoVazio: 'Nenhum aluno ativo com esse nome',
+});
 
 function abrirFormulario(pacote = null) {
   if (!pacote && !listaDeAlunos().some((a) => a.ativo)) {
@@ -167,7 +164,9 @@ function abrirFormulario(pacote = null) {
   editando = pacote;
 
   tituloDialogo.textContent = pacote ? 'Editar pacote' : 'Novo pacote';
-  campos.aluno.replaceChildren(...opcoesDeAluno(pacote));
+  // Na edição o aluno fica travado (mesmo que esteja inativo)
+  if (pacote) autocompletarAluno.definir({ id: pacote.aluno_id, nome: pacote.aluno_nome });
+  else autocompletarAluno.limpar();
   campos.aluno.disabled = Boolean(pacote);
   campos.quantidade.value = pacote?.quantidade_aulas ?? '';
   campos.valor.value = pacote ? formatarNumero(pacote.valor) : '';
@@ -210,11 +209,12 @@ form.addEventListener('submit', async (evento) => {
   };
 
   if (!pacote) {
-    if (!campos.aluno.value) {
-      mostrarAviso(erroForm, 'Escolha o aluno do pacote.');
+    const alunoId = autocompletarAluno.valor();
+    if (!alunoId) {
+      mostrarAviso(erroForm, 'Escolha um aluno da lista.');
       return campos.aluno.focus();
     }
-    dados.aluno_id = campos.aluno.value;
+    dados.aluno_id = alunoId;
   }
 
   // RN02, RN05 e o complemento da RN02 na tela; o banco repete as três
