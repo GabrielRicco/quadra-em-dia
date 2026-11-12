@@ -19,6 +19,7 @@ js/regras.js        regras de negócio, filtros e tradução dos erros do banco,
 js/formato.js       reais e datas no formato brasileiro, leitura de valor digitado (funções puras)
 js/tela.js          utilitários de tela: el() monta elementos só com texto, confirmar() e avisar()
 js/animacoes.js     todas as animações (Motion); respeita prefers-reduced-motion
+js/autocompletar.js campo com sugestões (combobox acessível) para escolher aluno; use no lugar de <select> longo
 js/app.js           login, abas e carga dos dados ao entrar
 js/alunos.js        aba Alunos (uma aba por arquivo)
 js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca e filtros
