@@ -156,6 +156,89 @@ h2 {
   margin: 0;
 }
 
+.secao-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.secao-topo h2 { margin: 0; }
+
+.aviso { margin: 0 0 1rem; }
+.aviso:empty { display: none; }
+.mensagem-ok { color: var(--quadra); }
+
+/* ---------- Listas em cartões ---------- */
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+
+.cartao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fff;
+  border: 1.5px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 0.9rem 1rem;
+}
+.cartao-inativo { background: var(--fundo); border-style: dashed; }
+.cartao-info { flex: 1 1 12rem; min-width: 0; }
+.cartao-info p { margin: 0; overflow-wrap: anywhere; }
+.cartao-titulo { font-weight: 600; font-size: 1.1rem; }
+.cartao-detalhe { color: var(--texto-suave); }
+.cartao-obs { color: var(--texto-suave); font-size: 0.95rem; font-style: italic; }
+.cartao-acoes { display: flex; gap: 0.5rem; }
+
+.etiqueta {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  background: #e1e6dd;
+  color: var(--texto);
+  font-size: 0.8rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.botao-pequeno { padding: 0.45rem 0.85rem; font-size: 0.95rem; }
+.botao-perigo {
+  font: inherit;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--erro);
+  border: 2px solid var(--erro);
+  padding: 0.75rem 1rem;
+}
+.botao-perigo.botao-pequeno { padding: 0.45rem 0.85rem; }
+
+/* ---------- Formulários em diálogo ---------- */
+.dialogo {
+  width: min(100% - 2rem, 28rem);
+  max-height: calc(100dvh - 2rem);
+  border: 0;
+  border-radius: var(--raio);
+  padding: 1.5rem 1.25rem;
+  background: var(--fundo);
+  color: var(--texto);
+}
+.dialogo::backdrop { background: rgba(20, 54, 40, 0.65); }
+.dialogo h3 {
+  font-family: var(--fonte-placar);
+  font-weight: 700;
+  font-size: 1.6rem;
+  margin: 0 0 0.25rem;
+}
+
+.check { display: flex; align-items: center; gap: 0.6rem; font-weight: 500; }
+input[type="checkbox"] { width: 1.25rem; height: 1.25rem; accent-color: var(--quadra); }
+
+.acoes { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
+
 /* No celular, as abas descem para perto do polegar */
 @media (max-width: 40rem) {
   .usuario { display: none; }

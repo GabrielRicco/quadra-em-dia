@@ -62,8 +62,13 @@
       </section>
 
       <section id="secao-alunos" data-secao="alunos" hidden>
-        <h2>Alunos</h2>
-        <p class="vazio">Nenhum aluno ainda. O cadastro de alunos chega no próximo incremento.</p>
+        <div class="secao-topo">
+          <h2>Alunos</h2>
+          <button type="button" id="botao-novo-aluno" class="botao-principal">Novo aluno</button>
+        </div>
+        <p id="alunos-aviso" class="mensagem-erro aviso" role="alert"></p>
+        <p id="alunos-vazio" class="vazio" hidden>Nenhum aluno ainda. Toque em "Novo aluno" para cadastrar o primeiro.</p>
+        <ul id="lista-alunos" class="lista"></ul>
       </section>
 
       <section id="secao-pacotes" data-secao="pacotes" hidden>
@@ -76,6 +81,41 @@
         <p class="vazio">Recebido no mês, a receber e alunos com pacote acabando.</p>
       </section>
     </main>
+
+    <!-- Formulário de aluno (criar e editar) -->
+    <dialog id="dialogo-aluno" class="dialogo" aria-labelledby="dialogo-aluno-titulo">
+      <form id="form-aluno" novalidate>
+        <h3 id="dialogo-aluno-titulo">Novo aluno</h3>
+
+        <label for="aluno-nome">Nome</label>
+        <input id="aluno-nome" name="nome" maxlength="80" autocomplete="off" required>
+
+        <label for="aluno-telefone">Telefone (opcional)</label>
+        <input id="aluno-telefone" name="telefone" type="tel" maxlength="20" autocomplete="off">
+
+        <label for="aluno-nivel">Nível</label>
+        <select id="aluno-nivel" name="nivel">
+          <option value="iniciante">Iniciante</option>
+          <option value="intermediario">Intermediário</option>
+          <option value="avancado">Avançado</option>
+        </select>
+
+        <label for="aluno-observacoes">Observações (opcional)</label>
+        <textarea id="aluno-observacoes" name="observacoes" maxlength="500" rows="3"></textarea>
+
+        <label class="check" for="aluno-ativo">
+          <input id="aluno-ativo" name="ativo" type="checkbox" checked>
+          Aluno ativo
+        </label>
+
+        <p id="aluno-erro" class="mensagem-erro" role="alert"></p>
+
+        <div class="acoes">
+          <button type="button" class="botao-secundario" data-fechar>Cancelar</button>
+          <button type="submit" class="botao-principal">Salvar</button>
+        </div>
+      </form>
+    </dialog>
   </div>
 
   <script type="module" src="js/app.js"></script>

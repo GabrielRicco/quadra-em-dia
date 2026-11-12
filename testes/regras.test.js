@@ -12,6 +12,8 @@ import {
   validarUsoDeAula,
   validarExclusaoAluno,
   saldoAcabando,
+  traduzirErroBanco,
+  ERRO_GENERICO,
 } from '../js/regras.js';
 
 test('CA01 · nome com 1 letra é recusado; 2 a 80 é aceito', () => {
@@ -83,4 +85,29 @@ test('CA06 · não exclui aluno com pacote não pago', () => {
   assert.equal(validarExclusaoAluno([{ pago: true }, { pago: false }]), MENSAGENS.excluirAluno);
   assert.equal(validarExclusaoAluno([{ pago: true }]), null);
   assert.equal(validarExclusaoAluno([]), null);
+});
+
+// Erros no formato que o Supabase (PostgREST) devolve quando o banco barra a operação
+test('erro de check ou exclude do banco vira a mensagem exata do SPEC', () => {
+  const check = (restricao, tabela) => ({
+    code: '23514',
+    message: `new row for relation "${tabela}" violates check constraint "${restricao}"`,
+  });
+  assert.equal(traduzirErroBanco(check('alunos_nome_tamanho', 'alunos')), MENSAGENS.nome);
+  assert.equal(traduzirErroBanco(check('pacotes_quantidade_valor', 'pacotes')), MENSAGENS.pacote);
+  assert.equal(traduzirErroBanco(check('pacotes_pago_consistente', 'pacotes')), MENSAGENS.pagamento);
+  assert.equal(
+    traduzirErroBanco({
+      code: '23P01',
+      message: 'conflicting key value violates exclusion constraint "aulas_sem_sobreposicao"',
+    }),
+    MENSAGENS.conflito,
+  );
+});
+
+test('mensagem levantada por trigger passa direto; erro desconhecido não mostra detalhe técnico', () => {
+  assert.equal(traduzirErroBanco({ code: 'P0001', message: MENSAGENS.semSaldo }), MENSAGENS.semSaldo);
+  assert.equal(traduzirErroBanco({ code: 'P0001', message: MENSAGENS.excluirAluno }), MENSAGENS.excluirAluno);
+  assert.equal(traduzirErroBanco({ code: 'XX000', message: 'internal error at line 42' }), ERRO_GENERICO);
+  assert.equal(traduzirErroBanco(undefined), ERRO_GENERICO);
 });

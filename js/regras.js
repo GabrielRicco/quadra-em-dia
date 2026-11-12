@@ -80,3 +80,32 @@ export function validarExclusaoAluno(pacotesDoAluno) {
 export function saldoAcabando(saldo) {
   return saldo <= LIMITE_SALDO_ACABANDO;
 }
+
+// ---------- Erros do banco → mensagens do SPEC ----------
+// Os triggers já levantam a mensagem exata. Os checks e o exclude chegam com o
+// nome da restrição, que trocamos pela mensagem do critério de aceitação.
+const MENSAGEM_POR_RESTRICAO = {
+  alunos_nome_tamanho: MENSAGENS.nome,
+  alunos_telefone_tamanho: 'O telefone pode ter no máximo 20 caracteres.',
+  alunos_observacoes_tamanho: 'As observações podem ter no máximo 500 caracteres.',
+  pacotes_quantidade_valor: MENSAGENS.pacote,
+  pacotes_pago_consistente: MENSAGENS.pagamento,
+  aulas_sem_sobreposicao: MENSAGENS.conflito,
+  aulas_duracao: 'A aula precisa durar de 15 a 240 minutos.',
+};
+
+export const ERRO_GENERICO = 'Algo deu errado ao falar com o servidor. Tente de novo em instantes.';
+
+export function traduzirErroBanco(erro) {
+  const texto = erro?.message ?? '';
+  if (Object.values(MENSAGENS).includes(texto) || texto.startsWith('O pacote já tem ')) return texto;
+
+  const restricao = Object.keys(MENSAGEM_POR_RESTRICAO).find((nome) => texto.includes(`"${nome}"`));
+  if (restricao) return MENSAGEM_POR_RESTRICAO[restricao];
+
+  if (erro?.code === '42501') return 'Você não tem permissão para isso. Saia e entre de novo.';
+  if (/failed to fetch|network/i.test(texto)) {
+    return 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
+  }
+  return ERRO_GENERICO; // nunca mostra o texto técnico do banco para o usuário
+}

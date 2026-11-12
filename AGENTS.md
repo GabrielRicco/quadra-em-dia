@@ -13,8 +13,11 @@ Leia o `SPEC.md` antes de qualquer tarefa. Ele manda; este arquivo diz como trab
 index.html          tela de login e app
 style.css
 js/config.js        URL do projeto e chave PUBLICÁVEL do Supabase
-js/regras.js        regras de negócio como funções puras (sem DOM, sem rede)
-js/app.js           tela, eventos e chamadas ao Supabase
+js/supabase.js      cria o cliente do Supabase (único lugar)
+js/regras.js        regras de negócio e tradução dos erros do banco, como funções puras (sem DOM, sem rede)
+js/tela.js          utilitários de tela: el() monta elementos só com texto, avisos
+js/app.js           login, abas e carga dos dados ao entrar
+js/alunos.js        aba Alunos (uma aba por arquivo)
 sql/schema.sql      tabelas, constraints, triggers e políticas de RLS
 testes/regras.test.js
 package.json        "type": "module" e script "test"

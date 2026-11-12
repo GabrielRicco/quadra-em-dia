@@ -1,9 +1,7 @@
-// Incremento 1: login, sair e navegação entre abas.
-// Os cadastros (alunos, pacotes, aulas) chegam nos próximos incrementos.
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { SUPABASE_URL, SUPABASE_CHAVE } from './config.js';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_CHAVE);
+// Login, sair, navegação entre abas e carga dos dados de cada aba.
+// Cada aba tem o próprio arquivo (js/alunos.js, ...).
+import { supabase } from './supabase.js';
+import { carregarAlunos, limparAlunos } from './alunos.js';
 
 const telaLogin = document.getElementById('tela-login');
 const telaApp = document.getElementById('tela-app');
@@ -97,7 +95,18 @@ function mostrarDataDeHoje() {
   document.getElementById('titulo-hoje').textContent = `Hoje, ${hoje}`;
 }
 
+// ---------- Dados de cada aba ----------
+function carregarDados() {
+  carregarAlunos();
+}
+
+function limparDados() {
+  limparAlunos();
+}
+
 // ---------- Troca de tela conforme a sessão ----------
+let usuarioAtual = null;
+
 function atualizarTela(sessao) {
   const logado = Boolean(sessao);
   telaLogin.hidden = logado;
@@ -109,6 +118,14 @@ function atualizarTela(sessao) {
   } else {
     formLogin.reset();
   }
+
+  // Só recarrega quando muda a pessoa logada (a renovação do token também dispara este evento)
+  const novoUsuario = sessao?.user.id ?? null;
+  if (novoUsuario === usuarioAtual) return;
+  usuarioAtual = novoUsuario;
+  limparDados();
+  // Fora do callback de autenticação: chamar o Supabase dentro dele pode travar a sessão
+  if (novoUsuario) setTimeout(carregarDados, 0);
 }
 
 supabase.auth.onAuthStateChange((_evento, sessao) => atualizarTela(sessao));
