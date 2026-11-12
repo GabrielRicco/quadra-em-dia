@@ -1,5 +1,7 @@
 # Quadra em Dia 🎾
 
+[![Testes](https://github.com/GabrielRicco/quadra-em-dia/actions/workflows/testes.yml/badge.svg)](https://github.com/GabrielRicco/quadra-em-dia/actions/workflows/testes.yml)
+
 Agenda de aulas e controle de pacotes para professores de tênis: as aulas de hoje, o saldo de cada pacote e quem já pagou.
 
 **No ar:** https://gabrielricco.github.io/quadra-em-dia/
@@ -21,6 +23,7 @@ Requer Node 20 ou mais novo.
 ```
 npm test
 ```
+Os mesmos testes rodam sozinhos no GitHub Actions a cada push e pull request ([.github/workflows/testes.yml](.github/workflows/testes.yml)), no fuso de São Paulo. O selo no topo deste README mostra se o último push passou.
 
 ## Segurança
 - A chave publicável fica no navegador; quem protege os dados é o RLS: cada professor só lê e altera os próprios alunos, pacotes e aulas.
