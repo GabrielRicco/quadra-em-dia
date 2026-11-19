@@ -8,6 +8,7 @@ import {
 } from './regras.js';
 import {
   lerValorEmReais, formatarReais, formatarNumero, formatarData, dataISO, iniciais,
+  formatarDiaCurto, formatarHora, SITUACOES,
 } from './formato.js';
 import {
   el, mostrarAviso, travarBotoes, confirmar, avisar, abrirDialogo, fecharDialogo,
@@ -29,6 +30,8 @@ const form = document.getElementById('form-pacote');
 const erroForm = document.getElementById('pacote-erro');
 const infoSaldo = document.getElementById('pacote-saldo');
 const campoPagoEm = document.getElementById('campo-pago-em');
+const historico = document.getElementById('pacote-aulas');
+const historicoLista = document.getElementById('pacote-aulas-lista');
 const botaoExcluir = document.getElementById('botao-excluir-pacote');
 const campos = {
   aluno: document.getElementById('pacote-aluno'),
@@ -56,6 +59,8 @@ export async function carregarPacotes(destaqueId = null) {
   if (error) return avisar(traduzirErroBanco(error), 'erro');
   pacotes = data.sort(compararPacotes);
   desenhar({ destaqueId });
+  // A agenda (Hoje) e o Resumo usam o saldo e os valores dos pacotes
+  document.dispatchEvent(new Event('pacotes-mudaram'));
 }
 
 // Ao sair ou trocar de conta, nada da conta anterior fica na tela (CA09)
@@ -181,6 +186,9 @@ function abrirFormulario(pacote = null) {
   if (pacote) {
     infoSaldo.textContent = `${pacote.usadas} de ${pacote.quantidade_aulas} aulas usadas · ${textoSaldo(pacote)}`;
   }
+  historico.hidden = true;
+  historicoLista.replaceChildren();
+  if (pacote) carregarHistorico(pacote);
   botaoExcluir.hidden = !pacote;
   mostrarAviso(erroForm, '');
   abrirDialogo(dialogo);
@@ -188,6 +196,24 @@ function abrirFormulario(pacote = null) {
 }
 
 botaoNovo.addEventListener('click', () => abrirFormulario());
+
+// RF04 · aulas deste pacote, da mais antiga para a mais nova
+async function carregarHistorico(pacote) {
+  const { data, error } = await supabase
+    .from('aulas')
+    .select('id, inicio, status')
+    .eq('pacote_id', pacote.id)
+    .order('inicio');
+  // a resposta chegou depois de o modal já ter mudado de pacote: descarta
+  if (error || editando?.id !== pacote.id || !data.length) return;
+
+  historicoLista.replaceChildren(...data.map((aula) =>
+    el('li', {},
+      el('span', {}, `${formatarDiaCurto(aula.inicio)} · ${formatarHora(aula.inicio)}`),
+      el('span', { class: `selo selo-${aula.status}` }, SITUACOES[aula.status]),
+    )));
+  historico.hidden = false;
+}
 
 // RF06 · ao marcar como pago, a data já vem com hoje (dá para trocar)
 campos.pago.addEventListener('change', () => {

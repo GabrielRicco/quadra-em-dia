@@ -17,6 +17,8 @@ import {
   validarReducaoAulas,
   pacotesAcabando,
   filtrarPacotes,
+  pacotesParaAgendar,
+  aulasDoDia,
 } from '../js/regras.js';
 
 test('CA01 · nome com 1 letra é recusado; 2 a 80 é aceito', () => {
@@ -144,4 +146,20 @@ test('RF07 · busca pelo nome ignora acento e maiúscula; filtros pago e em aber
   assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'pagos' }).map((p) => p.id), ['p1']);
   assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'abertos' }).map((p) => p.id), ['p2']);
   assert.equal(filtrarPacotes(pacotes).length, 2);
+});
+
+test('CA08 · a agenda mostra só as aulas do dia, em ordem de horário', () => {
+  const aula = (id, d, h) => ({ id, inicio: new Date(2026, 10, d, h).toISOString() });
+  const aulas = [aula('tarde', 19, 15), aula('amanha', 20, 8), aula('manha', 19, 7), aula('ontem', 18, 22)];
+  assert.deepEqual(aulasDoDia(aulas, '2026-11-19').map((a) => a.id), ['manha', 'tarde']);
+});
+
+test('agendar aula só em pacote com saldo de aluno ativo', () => {
+  const alunos = [{ id: 'ana', ativo: true }, { id: 'bia', ativo: false }];
+  const pacotes = [
+    { id: 'p1', aluno_id: 'ana', saldo: 3 },
+    { id: 'p2', aluno_id: 'ana', saldo: 0 }, // acabou
+    { id: 'p3', aluno_id: 'bia', saldo: 5 }, // aluna inativa
+  ];
+  assert.deepEqual(pacotesParaAgendar(pacotes, alunos).map((p) => p.id), ['p1']);
 });

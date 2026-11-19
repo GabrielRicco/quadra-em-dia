@@ -37,6 +37,74 @@ export function dataISO(data) {
   return `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}`;
 }
 
+// Situação da aula como aparece na tela
+export const SITUACOES = { agendada: 'Agendada', dada: 'Dada', falta: 'Falta', cancelada: 'Cancelada' };
+
+// ---------- Agenda: dia e hora no fuso do aparelho ----------
+// Nomes escritos aqui (e não pelo Intl) para o resultado não depender do idioma instalado.
+const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+const DIAS_CURTOS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
+  'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+const doisDigitos = (n) => String(n).padStart(2, '0');
+
+// 'AAAA-MM-DD' → Date à meia-noite local
+function diaLocal(data) {
+  const [ano, mes, dia] = data.split('-').map(Number);
+  return new Date(ano, mes - 1, dia);
+}
+
+// Instante do banco (timestamptz) → "08:30"
+export function formatarHora(instante) {
+  const d = new Date(instante);
+  return `${doisDigitos(d.getHours())}:${doisDigitos(d.getMinutes())}`;
+}
+
+// Campos do formulário ('AAAA-MM-DD' e 'HH:MM') → Date no fuso do aparelho
+export function juntarDataHora(data, hora) {
+  const [h, min] = hora.split(':').map(Number);
+  const d = diaLocal(data);
+  d.setHours(h, min, 0, 0);
+  return d;
+}
+
+// Começo do dia e começo do dia seguinte, em ISO, para buscar as aulas do dia
+export function limitesDoDia(data) {
+  const de = diaLocal(data);
+  const ate = new Date(de.getFullYear(), de.getMonth(), de.getDate() + 1);
+  return { de: de.toISOString(), ate: ate.toISOString() };
+}
+
+export function somarDias(data, dias) {
+  const d = diaLocal(data);
+  return dataISO(new Date(d.getFullYear(), d.getMonth(), d.getDate() + dias));
+}
+
+export function duracaoEmMinutos(inicio, fim) {
+  return Math.round((new Date(fim) - new Date(inicio)) / 60_000);
+}
+
+// Título da agenda: "Hoje", "Amanhã", "Ontem" ou o dia da semana
+export function rotuloDoDia(data, hoje) {
+  if (data === hoje) return 'Hoje';
+  if (data === somarDias(hoje, 1)) return 'Amanhã';
+  if (data === somarDias(hoje, -1)) return 'Ontem';
+  return DIAS[diaLocal(data).getDay()];
+}
+
+// '2026-11-19' → "19 de novembro"
+export function dataPorExtenso(data) {
+  const d = diaLocal(data);
+  return `${d.getDate()} de ${MESES[d.getMonth()]}`;
+}
+
+// Instante → "qui, 19/11" (lista de aulas do pacote)
+export function formatarDiaCurto(instante) {
+  const d = new Date(instante);
+  return `${DIAS_CURTOS[d.getDay()]}, ${doisDigitos(d.getDate())}/${doisDigitos(d.getMonth() + 1)}`;
+}
+
 // "  João ÁVILA " → "joao avila": para buscar sem ligar para acento e maiúscula
 export function normalizarTexto(texto) {
   return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();

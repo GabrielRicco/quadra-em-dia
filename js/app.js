@@ -3,6 +3,7 @@
 import { supabase } from './supabase.js';
 import { carregarAlunos, limparAlunos } from './alunos.js';
 import { carregarPacotes, limparPacotes } from './pacotes.js';
+import { carregarAulas, limparAulas } from './hoje.js';
 import {
   entrarLogin, entrarSecao, entrarEmCascata, encherBarras, aoPressionar,
 } from './animacoes.js';
@@ -99,20 +100,17 @@ function mostrarAba() {
 
 window.addEventListener('hashchange', mostrarAba);
 
-function mostrarDataDeHoje() {
-  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  document.getElementById('data-hoje').textContent = hoje.charAt(0).toUpperCase() + hoje.slice(1);
-}
-
 // ---------- Dados de cada aba ----------
-function carregarDados() {
-  carregarAlunos();
-  carregarPacotes();
+// A agenda usa os pacotes (nome do aluno e saldo): eles carregam antes
+async function carregarDados() {
+  await Promise.all([carregarAlunos(), carregarPacotes()]);
+  await carregarAulas();
 }
 
 function limparDados() {
   limparAlunos();
   limparPacotes();
+  limparAulas();
 }
 
 // ---------- Troca de tela conforme a sessão ----------
@@ -132,7 +130,6 @@ function atualizarTela(sessao) {
 
   if (logado) {
     usuarioEmail.textContent = sessao.user.email;
-    mostrarDataDeHoje();
     mostrarAba();
     // Fora do callback de autenticação: chamar o Supabase dentro dele pode travar a sessão
     setTimeout(carregarDados, 0);

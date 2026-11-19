@@ -365,6 +365,35 @@ input:focus, select:focus, textarea:focus {
 .chip input:checked + span { color: var(--cor-primaria); background: var(--cor-superficie); }
 .chip input:focus-visible + span { outline: 2px solid var(--cor-bola); outline-offset: 2px; }
 
+/* Navegação entre dias da agenda, dentro da faixa verde */
+.navegacao-dias { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.botao-dia {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.9rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--cor-sobre-verde);
+  background: var(--cor-sobre-verde-hover);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.botao-dia:hover { background: var(--cor-sobre-verde-ativo); }
+.botao-dia svg { width: 1.15rem; height: 1.15rem; }
+.botao-dia[aria-pressed="true"] { color: var(--cor-primaria); background: var(--cor-superficie); }
+.campo-dia {
+  width: auto;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.8rem;
+  border-color: transparent;
+  border-radius: 999px;
+}
+
 .titulo { font-size: 1.75rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; }
 .subtitulo { margin-top: 0.2rem; font-size: 0.95rem; color: var(--cor-sobre-verde-suave); }
 
@@ -464,8 +493,70 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600;
   white-space: nowrap;
 }
-.selo-pago { background: var(--cor-primaria-clara); color: var(--cor-primaria); }
-.selo-aberto { background: var(--cor-alerta-clara); color: var(--cor-alerta); }
+.selo-pago, .selo-dada { background: var(--cor-primaria-clara); color: var(--cor-primaria); }
+.selo-aberto, .selo-falta { background: var(--cor-alerta-clara); color: var(--cor-alerta); }
+.selo-agendada, .selo-cancelada { background: var(--cor-neutra-clara); color: var(--cor-suave); }
+
+/* ---------- Agenda: uma linha por aula ---------- */
+.aula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 1rem;
+  padding-right: 1rem;
+  transition: background-color 0.15s;
+}
+.aula:has(.aula-principal:hover) { background: var(--cor-hover); }
+.aula-principal {
+  flex: 1 1 16rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+  padding: 0.85rem 0 0.85rem 1.1rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.aula-principal:focus-visible { outline-offset: -2px; }
+.aula-hora {
+  flex: none;
+  display: grid;
+  min-width: 3.1rem;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.aula-hora strong { font-size: 1.05rem; font-weight: 600; }
+.aula-hora span { font-size: 0.8rem; color: var(--cor-suave); }
+.aula-acoes { display: flex; gap: 0.5rem; }
+.aula-cancelada .item-titulo,
+.aula-cancelada .aula-hora strong { color: var(--cor-suave); text-decoration: line-through; }
+
+/* Aulas do pacote (no modal do pacote) */
+.historico { display: grid; gap: 0.4rem; }
+.historico-titulo { font-size: 0.875rem; font-weight: 500; }
+.historico ul {
+  max-height: 12rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pequeno);
+}
+.historico li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.historico li + li { border-top: 1px solid var(--cor-borda); }
 
 /* Barra de saldo do pacote (aulas usadas / contratadas) */
 .saldo {
@@ -611,6 +702,10 @@ input:focus, select:focus, textarea:focus {
   }
   .dialogo-rodape-acoes { width: 100%; }
   .dialogo-rodape-acoes .botao { flex: 1; }
+
+  /* na agenda, os botões dada/falta/cancelada descem para a linha de baixo, largos para o dedo */
+  .aula-acoes { width: 100%; padding: 0 0 0.85rem 1.1rem; }
+  .aula-acoes .botao { flex: 1; min-height: 2.5rem; }
 
   .avisos { bottom: calc(var(--altura-abas) + 1rem + env(safe-area-inset-bottom, 0px)); }
 }

@@ -74,14 +74,33 @@
       <section id="secao-hoje" data-secao="hoje">
         <div class="secao-topo">
           <div>
-            <h1 class="titulo">Hoje</h1>
-            <p id="data-hoje" class="subtitulo"></p>
+            <h1 id="hoje-titulo" class="titulo">Hoje</h1>
+            <p id="hoje-subtitulo" class="subtitulo"></p>
+          </div>
+          <button type="button" id="botao-agendar" class="botao botao-destaque">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Agendar aula
+          </button>
+
+          <div class="ferramentas">
+            <div class="navegacao-dias" role="group" aria-label="Escolher o dia da agenda">
+              <button type="button" id="dia-anterior" class="botao-dia" aria-label="Dia anterior">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button type="button" id="dia-hoje" class="botao-dia">Hoje</button>
+              <button type="button" id="dia-seguinte" class="botao-dia" aria-label="Próximo dia">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <label for="dia-escolhido" class="visualmente-oculto">Ir para a data</label>
+              <input id="dia-escolhido" type="date" class="campo-dia">
+            </div>
           </div>
         </div>
-        <div class="vazio">
-          <p class="vazio-titulo">Nenhuma aula hoje</p>
-          <p>Cadastre um aluno e um pacote para começar a agenda.</p>
+        <div id="hoje-vazio" class="vazio" hidden>
+          <p class="vazio-titulo">Nenhuma aula neste dia</p>
+          <p>Toque em "Agendar aula" para marcar uma.</p>
         </div>
+        <ul id="lista-aulas" class="lista"></ul>
       </section>
 
       <section id="secao-alunos" data-secao="alunos" hidden>
@@ -247,6 +266,11 @@
 
         <p id="pacote-saldo" class="info-saldo" hidden></p>
 
+        <div id="pacote-aulas" class="historico" hidden>
+          <p class="historico-titulo">Aulas deste pacote</p>
+          <ul id="pacote-aulas-lista"></ul>
+        </div>
+
         <label class="check" for="pacote-pago">
           <input id="pacote-pago" name="pago" type="checkbox">
           Pacote pago
@@ -260,6 +284,73 @@
 
         <div class="dialogo-rodape">
           <button type="button" id="botao-excluir-pacote" class="botao botao-perigo-texto" hidden>Excluir pacote</button>
+          <div class="dialogo-rodape-acoes">
+            <button type="button" class="botao botao-secundario" data-fechar>Cancelar</button>
+            <button type="submit" class="botao botao-primario">Salvar</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Formulário de aula (agendar, editar, mudar situação e excluir) -->
+    <dialog id="dialogo-aula" class="dialogo" aria-labelledby="dialogo-aula-titulo">
+      <form id="form-aula" class="formulario" novalidate>
+        <div class="dialogo-cabecalho">
+          <h2 id="dialogo-aula-titulo">Agendar aula</h2>
+          <button type="button" class="botao-icone" data-fechar aria-label="Fechar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="campo">
+          <label for="aula-aluno">Aluno</label>
+          <div class="autocompletar">
+            <input id="aula-aluno" type="text" class="campo-lupa" role="combobox"
+                   aria-autocomplete="list" aria-expanded="false" aria-controls="aula-aluno-opcoes"
+                   placeholder="Digite o nome do aluno" autocomplete="off" required>
+            <ul id="aula-aluno-opcoes" class="opcoes" role="listbox" aria-label="Alunos com pacote e saldo" hidden></ul>
+          </div>
+        </div>
+
+        <p id="aula-pacote-info" class="info-saldo" hidden></p>
+
+        <div class="campos-lado-a-lado">
+          <div class="campo">
+            <label for="aula-data">Data</label>
+            <input id="aula-data" name="data" type="date" required>
+          </div>
+          <div class="campo">
+            <label for="aula-hora">Início</label>
+            <input id="aula-hora" name="hora" type="time" step="900" required>
+          </div>
+        </div>
+
+        <div class="campos-lado-a-lado">
+          <div class="campo">
+            <label for="aula-duracao">Duração</label>
+            <select id="aula-duracao" name="duracao">
+              <option value="30">30 minutos</option>
+              <option value="45">45 minutos</option>
+              <option value="60" selected>1 hora</option>
+              <option value="90">1 hora e meia</option>
+              <option value="120">2 horas</option>
+            </select>
+          </div>
+          <div id="campo-aula-status" class="campo" hidden>
+            <label for="aula-status">Situação</label>
+            <select id="aula-status" name="status">
+              <option value="agendada">Agendada</option>
+              <option value="dada">Dada</option>
+              <option value="falta">Falta</option>
+              <option value="cancelada">Cancelada</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="aula-erro" class="mensagem-erro" role="alert"></p>
+
+        <div class="dialogo-rodape">
+          <button type="button" id="botao-excluir-aula" class="botao botao-perigo-texto" hidden>Excluir aula</button>
           <div class="dialogo-rodape-acoes">
             <button type="button" class="botao botao-secundario" data-fechar>Cancelar</button>
             <button type="submit" class="botao botao-primario">Salvar</button>

@@ -9,6 +9,14 @@ import {
   dataISO,
   iniciais,
   normalizarTexto,
+  formatarHora,
+  juntarDataHora,
+  limitesDoDia,
+  somarDias,
+  duracaoEmMinutos,
+  rotuloDoDia,
+  dataPorExtenso,
+  formatarDiaCurto,
 } from '../js/formato.js';
 
 test('busca ignora acento, maiúscula e espaço nas pontas', () => {
@@ -42,4 +50,26 @@ test('formata reais e datas sem mudar o dia por causa do fuso', () => {
 test('iniciais do nome para o avatar', () => {
   assert.equal(iniciais('Ana Clara Souza'), 'AS');
   assert.equal(iniciais('  bia  '), 'B');
+});
+
+test('agenda: hora, duração e limites do dia no fuso do aparelho', () => {
+  const inicio = juntarDataHora('2026-11-19', '08:30');
+  assert.equal(formatarHora(inicio.toISOString()), '08:30');
+  assert.equal(duracaoEmMinutos(inicio.toISOString(), new Date(2026, 10, 19, 9, 30).toISOString()), 60);
+
+  const { de, ate } = limitesDoDia('2026-11-19');
+  assert.equal(de, new Date(2026, 10, 19).toISOString());
+  assert.equal(ate, new Date(2026, 10, 20).toISOString());
+
+  assert.equal(somarDias('2026-11-30', 1), '2026-12-01');
+  assert.equal(somarDias('2026-01-01', -1), '2025-12-31');
+});
+
+test('título e data do dia escritos em português', () => {
+  assert.equal(rotuloDoDia('2026-11-19', '2026-11-19'), 'Hoje');
+  assert.equal(rotuloDoDia('2026-11-20', '2026-11-19'), 'Amanhã');
+  assert.equal(rotuloDoDia('2026-11-18', '2026-11-19'), 'Ontem');
+  assert.equal(rotuloDoDia('2026-11-21', '2026-11-19'), 'Sábado');
+  assert.equal(dataPorExtenso('2026-11-19'), '19 de novembro');
+  assert.equal(formatarDiaCurto(new Date(2026, 10, 19, 8).toISOString()), 'qui, 19/11');
 });

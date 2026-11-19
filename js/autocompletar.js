@@ -12,7 +12,8 @@ import { normalizarTexto, iniciais } from './formato.js';
 import { mostrarLista } from './animacoes.js';
 
 // opcoes(): devolve [{ id, nome, detalhe? }] na hora de abrir (a lista pode ter mudado)
-export function criarAutocompletar(input, { opcoes, textoVazio = 'Nenhum resultado' }) {
+// aoEscolher(opcao): chamado quando uma opção é confirmada
+export function criarAutocompletar(input, { opcoes, textoVazio = 'Nenhum resultado', aoEscolher = () => {} }) {
   const listbox = document.getElementById(input.getAttribute('aria-controls'));
   let filtradas = [];
   let ativa = -1;       // índice da opção destacada pelas setas
@@ -77,6 +78,7 @@ export function criarAutocompletar(input, { opcoes, textoVazio = 'Nenhum resulta
     escolhida = opcao;
     input.value = opcao.nome;
     fechar();
+    aoEscolher(opcao);
   }
 
   input.addEventListener('focus', () => { filtrar(); abrir(); });
@@ -110,7 +112,10 @@ export function criarAutocompletar(input, { opcoes, textoVazio = 'Nenhum resulta
     if (!escolhida) {
       const termo = normalizarTexto(input.value);
       const iguais = opcoes().filter((o) => normalizarTexto(o.nome) === termo);
-      if (termo && iguais.length === 1) escolhida = iguais[0];
+      if (termo && iguais.length === 1) {
+        escolhida = iguais[0];
+        aoEscolher(escolhida);
+      }
     }
     fechar();
   });

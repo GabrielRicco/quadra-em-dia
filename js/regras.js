@@ -2,7 +2,7 @@
 // Funções puras: sem DOM e sem rede, para serem testadas com `npm test`.
 // Cada validação devolve a mensagem de erro exata do SPEC, ou null se está tudo certo.
 // O banco (sql/schema.sql) repete as mesmas regras: a tela avisa, o banco garante.
-import { normalizarTexto } from './formato.js';
+import { normalizarTexto, limitesDoDia } from './formato.js';
 
 export const MENSAGENS = {
   nome: 'O nome precisa ter entre 2 e 80 caracteres.',
@@ -80,6 +80,21 @@ export function validarExclusaoAluno(pacotesDoAluno) {
 
 export function saldoAcabando(saldo) {
   return saldo <= LIMITE_SALDO_ACABANDO;
+}
+
+// CA08 · a agenda mostra só as aulas do dia ('AAAA-MM-DD', fuso do aparelho), em ordem de horário
+export function aulasDoDia(aulas, data) {
+  const { de, ate } = limitesDoDia(data);
+  const [inicioDia, fimDia] = [new Date(de), new Date(ate)];
+  return aulas
+    .filter((a) => new Date(a.inicio) >= inicioDia && new Date(a.inicio) < fimDia)
+    .sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+}
+
+// Agendar aula: só em pacote com saldo, de aluno ativo
+export function pacotesParaAgendar(pacotes, alunos) {
+  const ativos = new Set(alunos.filter((a) => a.ativo).map((a) => a.id));
+  return pacotes.filter((p) => ativos.has(p.aluno_id) && p.saldo > 0);
 }
 
 // Complemento da RN02: o pacote não pode ficar com menos aulas do que as já usadas
