@@ -6,11 +6,12 @@ import { supabase } from './supabase.js';
 import {
   validarConflito, validarUsoDeAula, calcularFim, aulasDoDia, aulasPorDia,
   pacotesAcabando, pacotesParaAgendar, traduzirErroBanco,
+  pacoteVencido, vencimentoDoPacote, validarPrazoDaAula,
 } from './regras.js';
 import {
   dataISO, formatarHora, juntarDataHora, somarDias, limitesDoDia,
   duracaoEmMinutos, rotuloDoDia, dataPorExtenso, SITUACOES,
-  diasDaGradeDoMes, somarMeses, mesPorExtenso,
+  diasDaGradeDoMes, somarMeses, mesPorExtenso, formatarData,
 } from './formato.js';
 import {
   el, mostrarAviso, travarBotoes, confirmar, avisar, abrirDialogo, fecharDialogo,
@@ -200,10 +201,16 @@ function abrirDia(data) {
 
 function textoSaldo(pacote) {
   if (!pacote) return '';
-  const saldo = pacote.saldo <= 0
-    ? 'pacote acabou'
-    : `saldo ${pacote.saldo} ${pacote.saldo === 1 ? 'aula' : 'aulas'}`;
+  let saldo = `saldo ${pacote.saldo} ${pacote.saldo === 1 ? 'aula' : 'aulas'}`;
+  if (pacote.saldo <= 0) saldo = 'pacote acabou';
+  else if (pacoteVencido(pacote, hoje())) saldo = 'pacote venceu'; // RN07
   return `Pacote de ${pacote.quantidade_aulas} · ${saldo}`;
+}
+
+// No agendamento, o prazo também aparece: "Pacote de 8 · saldo 3 aulas · vence 05/12"
+function textoParaAgendar(pacote) {
+  if (!pacote) return '';
+  return `${textoSaldo(pacote)} · vence ${formatarData(vencimentoDoPacote(pacote.inicio)).slice(0, 5)}`;
 }
 
 function itemDaAula(aula, pacote, acabando) {
@@ -298,7 +305,7 @@ radiosModo.forEach((radio) => radio.addEventListener('change', () => {
 const autocompletarAluno = criarAutocompletar(campos.aluno, {
   opcoes: () => pacotesParaAgendar(listaDePacotes(), listaDeAlunos())
     .sort((a, b) => a.aluno_nome.localeCompare(b.aluno_nome, 'pt-BR'))
-    .map((p) => ({ id: p.id, nome: p.aluno_nome, detalhe: textoSaldo(p) })),
+    .map((p) => ({ id: p.id, nome: p.aluno_nome, detalhe: textoParaAgendar(p) })),
   textoVazio: 'Nenhum aluno ativo com pacote e saldo',
   aoEscolher: (opcao) => mostrarInfoPacote(opcao.id),
 });
@@ -306,7 +313,7 @@ const autocompletarAluno = criarAutocompletar(campos.aluno, {
 function mostrarInfoPacote(pacoteId) {
   const pacote = pacotePorId(pacoteId);
   infoPacote.hidden = !pacote;
-  if (pacote) infoPacote.textContent = textoSaldo(pacote);
+  if (pacote) infoPacote.textContent = textoParaAgendar(pacote);
 }
 
 // Hoje: a próxima hora cheia. Outro dia: 8h.
@@ -374,6 +381,10 @@ form.addEventListener('submit', async (evento) => {
   // RN04 na tela: virar "dada" ou "falta" precisa de saldo
   const semSaldo = validarUsoDeAula(aula?.status ?? 'agendada', status, pacotePorId(pacoteId)?.saldo ?? 0);
   if (semSaldo) return mostrarAviso(erroForm, semSaldo);
+
+  // RN07 na tela: a aula não pode ficar depois do vencimento do pacote (CA12)
+  const foraDoPrazo = validarPrazoDaAula({ inicio, status }, pacotePorId(pacoteId));
+  if (foraDoPrazo) return mostrarAviso(erroForm, foraDoPrazo);
 
   travarBotoes(form, true);
   // RN03 na tela: busca as aulas que cruzam este horário (o banco também barra)

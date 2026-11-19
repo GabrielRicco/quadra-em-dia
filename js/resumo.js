@@ -5,6 +5,7 @@
 import { supabase } from './supabase.js';
 import {
   resumoFinanceiro, recebidoPorMes, alunosParaRenovar, aulasPorSemana, traduzirErroBanco,
+  pacoteVencido,
 } from './regras.js';
 import {
   dataISO, somarDias, inicioDaSemana, limitesDoDia, formatarReais, formatarReaisInteiros,
@@ -142,7 +143,9 @@ function itemRenovar(pacote) {
   const usadasPct = Math.min(100, Math.round((pacote.usadas / pacote.quantidade_aulas) * 100));
   const barraCheia = el('span', { class: 'barra-cheia' });
   barraCheia.style.width = `${usadasPct}%`;
-  const saldo = pacote.saldo <= 0 ? 'pacote acabou' : `saldo ${plural(pacote.saldo, 'aula', 'aulas')}`;
+  let saldo = `saldo ${plural(pacote.saldo, 'aula', 'aulas')}`;
+  if (pacote.saldo <= 0) saldo = 'pacote acabou';
+  else if (pacoteVencido(pacote, dataISO(new Date()))) saldo = `venceu · ${plural(pacote.saldo, 'aula perdida', 'aulas perdidas')}`; // RN07
   return el('li', { class: 'medidor' },
     el('span', { class: 'avatar', 'aria-hidden': 'true' }, iniciais(pacote.aluno_nome)),
     el('span', { class: 'item-texto' },

@@ -5,6 +5,7 @@ import { supabase } from './supabase.js';
 import {
   validarPacote, validarPagamento, validarReducaoAulas,
   pacotesAcabando, filtrarPacotes, traduzirErroBanco,
+  pacoteVencido, vencimentoDoPacote,
 } from './regras.js';
 import {
   lerValorEmReais, formatarReais, formatarNumero, formatarData, dataISO, iniciais,
@@ -110,7 +111,15 @@ function textoContagem() {
 
 function textoSaldo(p) {
   if (p.saldo <= 0) return 'acabou';
+  // RN07: venceu com aulas sobrando, elas se perdem
+  if (pacoteVencido(p, dataISO(new Date()))) return `venceu · ${p.saldo} ${p.saldo === 1 ? 'aula perdida' : 'aulas perdidas'}`;
   return `saldo ${p.saldo} ${p.saldo === 1 ? 'aula' : 'aulas'}`;
+}
+
+// "vence 05/12" ou "venceu 05/12"
+function textoVencimento(p) {
+  const palavra = pacoteVencido(p, dataISO(new Date())) ? 'venceu' : 'vence';
+  return `${palavra} ${formatarData(vencimentoDoPacote(p.inicio)).slice(0, 5)}`;
 }
 
 function itemDoPacote(p, acabando) {
@@ -129,7 +138,7 @@ function itemDoPacote(p, acabando) {
       el('span', { class: 'item-texto' },
         el('span', { class: 'item-titulo' }, p.aluno_nome),
         el('span', { class: 'item-detalhe' },
-          `${p.quantidade_aulas} aulas · ${formatarReais(p.valor)} · desde ${formatarData(p.inicio)}`,
+          `${p.quantidade_aulas} aulas · ${formatarReais(p.valor)} · ${textoVencimento(p)}`,
         ),
         el('span', { class: acabando ? 'saldo saldo-acabando' : 'saldo' },
           el('span', { class: 'barra', 'aria-hidden': 'true' }, barraCheia),
@@ -184,7 +193,8 @@ function abrirFormulario(pacote = null) {
 
   infoSaldo.hidden = !pacote;
   if (pacote) {
-    infoSaldo.textContent = `${pacote.usadas} de ${pacote.quantidade_aulas} aulas usadas · ${textoSaldo(pacote)}`;
+    const prazo = `${pacoteVencido(pacote, hoje) ? 'venceu' : 'vence'} em ${formatarData(vencimentoDoPacote(pacote.inicio))}`;
+    infoSaldo.textContent = `${pacote.usadas} de ${pacote.quantidade_aulas} aulas usadas · ${textoSaldo(pacote)} · ${prazo}`;
   }
   historico.hidden = true;
   historicoLista.replaceChildren();

@@ -24,6 +24,9 @@ import {
   alunosParaRenovar,
   aulasPorSemana,
   aulasPorDia,
+  vencimentoDoPacote,
+  pacoteVencido,
+  validarPrazoDaAula,
 } from '../js/regras.js';
 
 test('CA01 · nome com 1 letra é recusado; 2 a 80 é aceito', () => {
@@ -128,6 +131,9 @@ test('pacote não pode ficar com menos aulas do que as já usadas', () => {
   assert.equal(traduzirErroBanco({ code: 'P0001', message: 'O pacote já tem 5 aulas usadas.' }), 'O pacote já tem 5 aulas usadas.');
 });
 
+// "Hoje" fixo: com o vencimento (RN07), o resultado não pode depender da data em que o teste roda
+const HOJE = '2026-11-19';
+
 // Pacotes como vêm da view pacotes_com_saldo
 const pacote = (id, aluno_id, aluno_nome, saldo, pago, inicio = '2026-11-01') =>
   ({ id, aluno_id, aluno_nome, saldo, pago, inicio });
@@ -135,12 +141,12 @@ const pacote = (id, aluno_id, aluno_nome, saldo, pago, inicio = '2026-11-01') =>
 test('CA07 · "saldo acabando" mostra saldo 2 ou menos, mas não aluno que já renovou', () => {
   const pacotes = [
     pacote('p1', 'ana', 'Ana', 2, true),                   // acabando
-    pacote('p2', 'bruno', 'Bruno', 0, true, '2026-09-01'), // acabou, mas o Bruno já comprou outro...
-    pacote('p3', 'bruno', 'Bruno', 8, false, '2026-10-01'), // ...mais novo
+    pacote('p2', 'bruno', 'Bruno', 0, true, '2026-10-01'), // acabou, mas o Bruno já comprou outro...
+    pacote('p3', 'bruno', 'Bruno', 8, false, '2026-11-05'), // ...mais novo e ainda no prazo
     pacote('p4', 'caio', 'Caio', 3, true),                 // ainda tem saldo
   ];
-  assert.deepEqual(pacotesAcabando(pacotes).map((p) => p.id), ['p1']);
-  assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'acabando' }).map((p) => p.id), ['p1']);
+  assert.deepEqual(pacotesAcabando(pacotes, HOJE).map((p) => p.id), ['p1']);
+  assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'acabando', hoje: HOJE }).map((p) => p.id), ['p1']);
 });
 
 test('"saldo acabando" conta só o pacote mais recente de cada aluno, mesmo com pacotes pequenos', () => {
@@ -150,7 +156,7 @@ test('"saldo acabando" conta só o pacote mais recente de cada aluno, mesmo com 
     pacote('velho2', 'dani', 'Dani', 0, true, '2026-09-01'),
     pacote('atual', 'dani', 'Dani', 1, false, '2026-10-01'),
   ];
-  assert.deepEqual(pacotesAcabando(pacotes).map((p) => p.id), ['atual']);
+  assert.deepEqual(pacotesAcabando(pacotes, HOJE).map((p) => p.id), ['atual']);
 });
 
 test('RF07 · busca pelo nome ignora acento e maiúscula; filtros pago e em aberto', () => {
@@ -173,11 +179,12 @@ test('CA08 · a agenda mostra só as aulas do dia, em ordem de horário', () => 
 test('agendar aula só em pacote com saldo de aluno ativo', () => {
   const alunos = [{ id: 'ana', ativo: true }, { id: 'bia', ativo: false }];
   const pacotes = [
-    { id: 'p1', aluno_id: 'ana', saldo: 3 },
-    { id: 'p2', aluno_id: 'ana', saldo: 0 }, // acabou
-    { id: 'p3', aluno_id: 'bia', saldo: 5 }, // aluna inativa
+    { id: 'p1', aluno_id: 'ana', saldo: 3, inicio: '2026-11-10' },
+    { id: 'p2', aluno_id: 'ana', saldo: 0, inicio: '2026-11-10' }, // acabou
+    { id: 'p3', aluno_id: 'bia', saldo: 5, inicio: '2026-11-10' }, // aluna inativa
+    { id: 'p4', aluno_id: 'ana', saldo: 6, inicio: '2026-10-01' }, // vencido (RN07)
   ];
-  assert.deepEqual(pacotesParaAgendar(pacotes, alunos).map((p) => p.id), ['p1']);
+  assert.deepEqual(pacotesParaAgendar(pacotes, alunos, HOJE).map((p) => p.id), ['p1']);
 });
 
 // ---------- Resumo (RF08) ----------
@@ -212,7 +219,7 @@ test('RF08 e CA07 · quem precisa renovar: um por aluno ativo, menor saldo prime
     { id: 'p3', aluno_id: 'bia', aluno_nome: 'Bia', saldo: 1, inicio: '2026-11-01' }, // o mais recente da Bia
     { id: 'p4', aluno_id: 'caio', aluno_nome: 'Caio', saldo: 1, inicio: '2026-11-01' }, // inativo
   ];
-  assert.deepEqual(alunosParaRenovar(pacotes, alunos).map((p) => p.id), ['p3', 'p1']);
+  assert.deepEqual(alunosParaRenovar(pacotes, alunos, HOJE).map((p) => p.id), ['p3', 'p1']);
 });
 
 test('aulas dadas e faltas por semana (segunda a domingo); cancelada e agendada não contam', () => {
@@ -229,4 +236,28 @@ test('calendário: aulas agrupadas por dia, cada dia em ordem de horário', () =
   const dias = aulasPorDia([aula('b', 19, 17), aula('c', 20, 8), aula('a', 19, 7)]);
   assert.deepEqual([...dias.keys()], ['2026-11-19', '2026-11-20']);
   assert.deepEqual(dias.get('2026-11-19').map((a) => a.id), ['a', 'b']);
+});
+
+// ---------- RN07 · vencimento do pacote ----------
+test('RN07 · o pacote vence 30 dias depois da compra e vale até esse dia', () => {
+  assert.equal(vencimentoDoPacote('2026-11-25'), '2026-12-25');
+  assert.equal(pacoteVencido({ inicio: '2026-11-25' }, '2026-12-25'), false);
+  assert.equal(pacoteVencido({ inicio: '2026-11-25' }, '2026-12-26'), true);
+});
+
+test('CA12 · aula depois do vencimento é recusada; cancelada pode ficar', () => {
+  const pacote = { inicio: '2026-11-25' };
+  const em = (dia, hora) => new Date(2026, 11, dia, hora).toISOString(); // dezembro
+  assert.equal(validarPrazoDaAula({ inicio: em(26, 9), status: 'agendada' }, pacote), MENSAGENS.vencido);
+  assert.equal(validarPrazoDaAula({ inicio: em(25, 21), status: 'agendada' }, pacote), null);
+  assert.equal(validarPrazoDaAula({ inicio: em(26, 9), status: 'cancelada' }, pacote), null);
+  assert.equal(traduzirErroBanco({ code: 'P0001', message: MENSAGENS.vencido }), MENSAGENS.vencido);
+  assert.equal(traduzirErroBanco({ code: 'P0001', message: MENSAGENS.prazoPacote }), MENSAGENS.prazoPacote);
+});
+
+test('CA13 · pacote vencido com aulas sobrando: precisa renovar e sai das opções de agendar', () => {
+  const alunos = [{ id: 'ana', ativo: true }];
+  const vencido = { id: 'v', aluno_id: 'ana', aluno_nome: 'Ana', saldo: 5, inicio: '2026-10-01' };
+  assert.deepEqual(pacotesAcabando([vencido], HOJE).map((p) => p.id), ['v']);
+  assert.deepEqual(pacotesParaAgendar([vencido], alunos, HOJE), []);
 });

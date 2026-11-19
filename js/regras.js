@@ -11,7 +11,29 @@ export const MENSAGENS = {
   semSaldo: 'Este pacote não tem mais aulas. Crie um novo pacote para o aluno.',
   pagamento: 'Informe a data do pagamento (não pode ser no futuro).',
   excluirAluno: 'Este aluno tem pacote não pago. Marque como inativo em vez de excluir.',
+  vencido: 'Esta aula fica depois do vencimento do pacote. Crie um novo pacote para o aluno.',
+  // mudar a data da compra não pode deixar aulas para fora do novo vencimento (só o banco checa)
+  prazoPacote: 'Já existem aulas depois do novo vencimento deste pacote. Mude essas aulas antes.',
 };
+
+// ---------- RN07 · vencimento do pacote ----------
+// O pacote vence 30 dias depois da compra e vale até esse dia (inclusive).
+// As aulas que sobrarem no vencimento se perdem (o trigger validar_aula_no_prazo do banco repete a regra).
+export const DIAS_DE_VALIDADE = 30;
+
+export function vencimentoDoPacote(inicio) {
+  return somarDias(inicio, DIAS_DE_VALIDADE);
+}
+
+export function pacoteVencido(pacote, hoje) {
+  return vencimentoDoPacote(pacote.inicio) < hoje;
+}
+
+// Aula que não foi cancelada não pode ficar depois do vencimento (CA12)
+export function validarPrazoDaAula({ inicio, status }, pacote) {
+  if (status === 'cancelada' || !pacote) return null;
+  return dataISO(new Date(inicio)) > vencimentoDoPacote(pacote.inicio) ? MENSAGENS.vencido : null;
+}
 
 const STATUS_QUE_CONSOMEM = ['dada', 'falta'];
 export const LIMITE_SALDO_ACABANDO = 2;
@@ -102,10 +124,10 @@ export function aulasPorDia(aulas) {
   return dias;
 }
 
-// Agendar aula: só em pacote com saldo, de aluno ativo
-export function pacotesParaAgendar(pacotes, alunos) {
+// Agendar aula: só em pacote com saldo e ainda no prazo (RN07), de aluno ativo
+export function pacotesParaAgendar(pacotes, alunos, hoje = dataISO(new Date())) {
   const ativos = new Set(alunos.filter((a) => a.ativo).map((a) => a.id));
-  return pacotes.filter((p) => ativos.has(p.aluno_id) && p.saldo > 0);
+  return pacotes.filter((p) => ativos.has(p.aluno_id) && p.saldo > 0 && !pacoteVencido(p, hoje));
 }
 
 // Complemento da RN02: o pacote não pode ficar com menos aulas do que as já usadas
@@ -114,15 +136,17 @@ export function validarReducaoAulas(quantidadeNova, usadas) {
   return quantidadeNova < usadas ? `O pacote já tem ${usadas} aulas usadas.` : null;
 }
 
-// CA07 e RF08 · pacotes com saldo acabando. Só o pacote mais recente de cada aluno conta:
-// os anteriores já foram renovados por ele (SPEC, seção 8, confirmado com o usuário real).
-export function pacotesAcabando(pacotes) {
+// CA07, CA13 e RF08 · pacotes que pedem renovação: saldo de 2 aulas ou menos, ou vencido (RN07).
+// Só o pacote mais recente de cada aluno conta: os anteriores já foram renovados por ele
+// (SPEC, seção 8, confirmado com o usuário real).
+export function pacotesAcabando(pacotes, hoje = dataISO(new Date())) {
   const maisRecente = new Map();
   for (const p of pacotes) {
     const atual = maisRecente.get(p.aluno_id);
     if (!atual || maisNovo(p, atual)) maisRecente.set(p.aluno_id, p);
   }
-  return pacotes.filter((p) => maisRecente.get(p.aluno_id) === p && saldoAcabando(p.saldo));
+  return pacotes.filter((p) => maisRecente.get(p.aluno_id) === p
+    && (saldoAcabando(p.saldo) || pacoteVencido(p, hoje)));
 }
 
 // Pela data da compra; no mesmo dia, pelo que foi cadastrado depois
@@ -132,9 +156,9 @@ function maisNovo(a, b) {
 }
 
 // RF07 · busca pelo nome do aluno (sem diferença de acento e maiúscula) e filtro
-export function filtrarPacotes(pacotes, { busca = '', filtro = 'todos' } = {}) {
+export function filtrarPacotes(pacotes, { busca = '', filtro = 'todos', hoje = dataISO(new Date()) } = {}) {
   const termo = normalizarTexto(busca);
-  const acabando = new Set(pacotesAcabando(pacotes));
+  const acabando = new Set(pacotesAcabando(pacotes, hoje));
   return pacotes.filter((p) => {
     if (termo && !normalizarTexto(p.aluno_nome).includes(termo)) return false;
     if (filtro === 'abertos') return !p.pago;
@@ -203,10 +227,10 @@ export function recebidoPorMes(pacotes, hoje, meses = 6) {
 
 // RF08 · alunos ativos com saldo de 2 aulas ou menos (mesma regra do filtro, CA07):
 // um por aluno (o pacote mais recente), menor saldo primeiro
-export function alunosParaRenovar(pacotes, alunos) {
+export function alunosParaRenovar(pacotes, alunos, hoje = dataISO(new Date())) {
   const ativos = new Set(alunos.filter((a) => a.ativo).map((a) => a.id));
   const porAluno = new Map();
-  for (const p of pacotesAcabando(pacotes)) {
+  for (const p of pacotesAcabando(pacotes, hoje)) {
     if (!ativos.has(p.aluno_id)) continue;
     const atual = porAluno.get(p.aluno_id);
     if (!atual || p.inicio > atual.inicio) porAluno.set(p.aluno_id, p);
