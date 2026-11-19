@@ -74,8 +74,10 @@ export function destacar(elemento) {
 export function abrirDialogo(dialogo) {
   dialogo.showModal();
   if (semMovimento()) return;
+  // As duas formas definem opacidade, tamanho e posição: se a janela mudou de largura depois de
+  // um modal fechar, nada do fechamento anterior (opacidade 0, encolhido) fica valendo.
   const quadros = celular.matches
-    ? { y: ['100%', '0%'] } // no celular, sobe de baixo
+    ? { opacity: [1, 1], scale: [1, 1], y: ['100%', '0%'] } // no celular, sobe de baixo
     : { opacity: [0, 1], scale: [0.94, 1], y: [10, 0] };
   animate(dialogo, quadros, MOLA);
 }
