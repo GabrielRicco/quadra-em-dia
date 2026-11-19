@@ -11,7 +11,7 @@ Projeto final de Tópicos Avançados de Programação (UNI-RN). Problema, regras
 ## O que dá para fazer
 - **Hoje:** a agenda do dia em ordem de horário, com o saldo do pacote de cada aluno e os botões *Dada*, *Falta* e *Cancelada*; setas para ver outros dias, e um calendário do mês (botão *Dia / Mês*).
 - **Alunos:** cadastro completo; aluno com pacote em aberto não pode ser excluído, só marcado como inativo.
-- **Pacotes:** pacotes de aulas por aluno, com saldo, vencimento (30 dias depois da compra), marcação de pago (data do Pix), busca pelo nome e filtros (em aberto, pagos, saldo acabando).
+- **Pacotes:** pacotes de aulas por aluno, com horário fixo opcional que já agenda as aulas, saldo, vencimento (30 dias depois da compra), marcação de pago (data do Pix), busca pelo nome e filtros (em aberto, pagos, saldo acabando).
 - **Resumo:** recebido no mês, total a receber, quem precisa renovar e gráficos de recebido por mês e aulas por semana (cada gráfico com a tabela de valores).
 - Regras de negócio validadas na tela **e** no banco: nome, limites do pacote, horário sobreposto, aula sem saldo, data do pagamento, exclusão de aluno e vencimento do pacote.
 

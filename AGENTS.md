@@ -22,14 +22,16 @@ js/animacoes.js     todas as animações (Motion); respeita prefers-reduced-moti
 js/autocompletar.js campo com sugestões (combobox acessível) para escolher aluno; use no lugar de <select> longo
 js/app.js           login, abas e carga dos dados ao entrar
 js/alunos.js        aba Alunos (uma aba por arquivo)
-js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca, filtros e aulas do pacote
+js/pacotes.js       aba Pacotes: cadastro, horário fixo que já agenda as aulas, marcar pago, busca, filtros e aulas do pacote
 js/hoje.js          aba Hoje: agenda por dia (lista) ou por mês (calendário), agendar/editar/excluir aula, botões dada/falta/cancelada
 js/resumo.js        aba Resumo: números do mês, gráficos (Chart.js baixado só ao abrir a aba) e tabela de cada gráfico
-                    (as abas conversam por eventos: "alunos-mudaram" e "pacotes-mudaram")
+                    (as abas conversam por eventos: "alunos-mudaram", "pacotes-mudaram" e "aulas-mudaram")
 sql/schema.sql      tabelas, constraints, triggers e políticas de RLS (instalação nova, completa)
 sql/migracao-*.sql  mudanças para um banco que já existe; o usuário roda no SQL Editor do Supabase
 testes/regras.test.js
 testes/formato.test.js
+docs/desenhos/      desenho aprovado de cada funcionalidade nova, antes do código
+docs/planos/        plano de implementação de cada desenho
 package.json        "type": "module" e script "test"
 ```
 

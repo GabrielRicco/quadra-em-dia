@@ -7,7 +7,7 @@ Decidido com o usuário em 19/11, com aprovação para mudar o SPEC (RF10, CA15 
 ## Regras
 
 - **Opcional.** Sem nenhum dia marcado, o pacote é criado como antes.
-- **Cada dia da semana marcado tem o próprio horário.** O dia marcado depois do primeiro já vem com o horário do primeiro dia preenchido. Uma duração só para todas as aulas (padrão: 1 hora, as mesmas opções da aula).
+- **Cada dia da semana marcado tem o próprio horário.** O dia marcado depois do primeiro já vem com o horário do primeiro dia preenchido; e, se ele marcar os dias antes de digitar, os dias ainda vazios seguem o horário digitado até ele mudar um deles à mão (ajuste feito no teste no navegador). Uma duração só para todas as aulas (padrão: 1 hora, as mesmas opções da aula).
 - **Começo:** o primeiro dia do padrão a partir da data da compra. Se a compra foi registrada com data passada, começa de hoje. Hoje só entra se o horário ainda não passou.
 - **Fim:** quando completa a quantidade de aulas do pacote ou quando chega o vencimento (data da compra + 30 dias, inclusive, RN07), o que vier primeiro.
 - **Conflito com aula já marcada** (RN03): a linha aparece em vermelho na hora, com a mensagem "Já existe uma aula neste horário." e o nome do aluno da outra aula. Enquanto houver conflito, Salvar não cria nada e o foco vai para o primeiro erro; ele resolve mudando o horário daquele dia ou desmarcando o dia. Aula que termina exatamente quando a outra começa não é conflito.

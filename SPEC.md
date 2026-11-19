@@ -84,6 +84,7 @@ Relações: um **aluno** tem vários **pacotes**; um **pacote** tem várias **au
 - **RF07** · Painel com busca por nome do aluno e filtros (pacote pago / em aberto, saldo acabando).
 - **RF08** · Resumo: total recebido no mês, total a receber (pacotes não pagos), alunos com saldo de 2 aulas ou menos.
 - **RF09** · Agenda também em calendário do mês (botão "Dia / Mês"); tocar num dia abre a lista daquele dia. _(Pedido do usuário real em 19/11.)_
+- **RF10** · Ao criar um pacote, escolher opcionalmente os dias da semana e o horário de cada dia; as aulas do pacote são agendadas na hora, até completar a quantidade ou chegar o vencimento. Depois de criadas, são aulas normais, que podem ser mudadas uma a uma. _(Pedido do usuário real em 19/11.)_
 
 ## 6. Regras de negócio
 
@@ -115,6 +116,8 @@ Todas validadas **na tela** (mensagem clara) **e no banco** (constraint, trigger
 | CA12 | Agendo aula para depois do vencimento do pacote | "Esta aula fica depois do vencimento do pacote. Crie um novo pacote para o aluno." |
 | CA13 | Pacote comprado há mais de 30 dias com aulas sobrando | Aparece como vencido, com as aulas perdidas; o aluno não aparece para agendar e entra em "saldo acabando". |
 | CA14 | Abro a agenda no modo "Mês" e toco num dia | Vejo o mês de segunda a domingo com as aulas de cada dia; o toque abre a lista daquele dia. |
+| CA15 | Monto o horário fixo do pacote num dia e horário que já tem aula | Na hora, aquela data aparece com "Já existe uma aula neste horário.", e o pacote não é salvo até eu mudar o horário. |
+| CA16 | Monto um horário fixo que não cabe até o vencimento | Aviso "Só cabem N das M aulas até o vencimento (dd/mm)…", e ao salvar são agendadas as N que cabem. |
 
 ## 8. Decisões confirmadas com o usuário real
 
