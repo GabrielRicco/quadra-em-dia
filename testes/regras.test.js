@@ -128,17 +128,28 @@ test('pacote não pode ficar com menos aulas do que as já usadas', () => {
 });
 
 // Pacotes como vêm da view pacotes_com_saldo
-const pacote = (id, aluno_id, aluno_nome, saldo, pago) => ({ id, aluno_id, aluno_nome, saldo, pago });
+const pacote = (id, aluno_id, aluno_nome, saldo, pago, inicio = '2026-11-01') =>
+  ({ id, aluno_id, aluno_nome, saldo, pago, inicio });
 
 test('CA07 · "saldo acabando" mostra saldo 2 ou menos, mas não aluno que já renovou', () => {
   const pacotes = [
-    pacote('p1', 'ana', 'Ana', 2, true),     // acabando
-    pacote('p2', 'bruno', 'Bruno', 0, true), // acabou, mas o Bruno já comprou outro...
-    pacote('p3', 'bruno', 'Bruno', 8, false), // ...com saldo
-    pacote('p4', 'caio', 'Caio', 3, true),   // ainda tem saldo
+    pacote('p1', 'ana', 'Ana', 2, true),                   // acabando
+    pacote('p2', 'bruno', 'Bruno', 0, true, '2026-09-01'), // acabou, mas o Bruno já comprou outro...
+    pacote('p3', 'bruno', 'Bruno', 8, false, '2026-10-01'), // ...mais novo
+    pacote('p4', 'caio', 'Caio', 3, true),                 // ainda tem saldo
   ];
   assert.deepEqual(pacotesAcabando(pacotes).map((p) => p.id), ['p1']);
   assert.deepEqual(filtrarPacotes(pacotes, { filtro: 'acabando' }).map((p) => p.id), ['p1']);
+});
+
+test('"saldo acabando" conta só o pacote mais recente de cada aluno, mesmo com pacotes pequenos', () => {
+  // Quem sempre compra pacote de 4 nunca tem mais de 2 de saldo: os antigos não podem aparecer
+  const pacotes = [
+    pacote('velho1', 'dani', 'Dani', 0, true, '2026-08-01'),
+    pacote('velho2', 'dani', 'Dani', 0, true, '2026-09-01'),
+    pacote('atual', 'dani', 'Dani', 1, false, '2026-10-01'),
+  ];
+  assert.deepEqual(pacotesAcabando(pacotes).map((p) => p.id), ['atual']);
 });
 
 test('RF07 · busca pelo nome ignora acento e maiúscula; filtros pago e em aberto', () => {

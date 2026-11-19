@@ -103,13 +103,21 @@ export function validarReducaoAulas(quantidadeNova, usadas) {
   return quantidadeNova < usadas ? `O pacote já tem ${usadas} aulas usadas.` : null;
 }
 
-// CA07 e RF08 · pacotes com saldo acabando. Aluno que já comprou outro pacote
-// com saldo sobrando não aparece: o pacote antigo dele já foi renovado.
+// CA07 e RF08 · pacotes com saldo acabando. Só o pacote mais recente de cada aluno conta:
+// os anteriores já foram renovados por ele (SPEC, seção 8, confirmado com o usuário real).
 export function pacotesAcabando(pacotes) {
-  const renovaram = new Set(
-    pacotes.filter((p) => !saldoAcabando(p.saldo)).map((p) => p.aluno_id),
-  );
-  return pacotes.filter((p) => saldoAcabando(p.saldo) && !renovaram.has(p.aluno_id));
+  const maisRecente = new Map();
+  for (const p of pacotes) {
+    const atual = maisRecente.get(p.aluno_id);
+    if (!atual || maisNovo(p, atual)) maisRecente.set(p.aluno_id, p);
+  }
+  return pacotes.filter((p) => maisRecente.get(p.aluno_id) === p && saldoAcabando(p.saldo));
+}
+
+// Pela data da compra; no mesmo dia, pelo que foi cadastrado depois
+function maisNovo(a, b) {
+  const [ia, ib] = [a.inicio ?? '', b.inicio ?? ''];
+  return ia > ib || (ia === ib && (a.criado_em ?? '') > (b.criado_em ?? ''));
 }
 
 // RF07 · busca pelo nome do aluno (sem diferença de acento e maiúscula) e filtro
