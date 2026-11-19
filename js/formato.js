@@ -46,6 +46,31 @@ const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quint
 const DIAS_CURTOS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
   'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+// ---------- Resumo ----------
+const REAIS_INTEIROS = new Intl.NumberFormat('pt-BR', {
+  style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0,
+});
+
+// 1500 → "R$ 1.500" (eixo dos gráficos)
+export function formatarReaisInteiros(valor) {
+  return REAIS_INTEIROS.format(Number(valor));
+}
+
+// '2026-11' → "novembro" / "nov"
+export function nomeDoMes(anoMes) {
+  return MESES[Number(anoMes.slice(5, 7)) - 1];
+}
+export function rotuloMes(anoMes) {
+  return MESES_CURTOS[Number(anoMes.slice(5, 7)) - 1];
+}
+
+// Segunda-feira da semana do dia (a semana vai de segunda a domingo)
+export function inicioDaSemana(data) {
+  const diaDaSemana = diaLocal(data).getDay(); // 0 = domingo
+  return somarDias(data, -((diaDaSemana + 6) % 7));
+}
 
 const doisDigitos = (n) => String(n).padStart(2, '0');
 

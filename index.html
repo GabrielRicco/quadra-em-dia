@@ -156,11 +156,73 @@
 
       <section id="secao-resumo" data-secao="resumo" hidden>
         <div class="secao-topo">
-          <h1 class="titulo">Resumo</h1>
+          <div>
+            <h1 class="titulo">Resumo</h1>
+            <p id="resumo-subtitulo" class="subtitulo"></p>
+          </div>
         </div>
-        <div class="vazio">
-          <p class="vazio-titulo">Em breve</p>
-          <p>Recebido no mês, a receber e alunos com pacote acabando.</p>
+
+        <div class="painel">
+          <div class="kpis">
+            <article class="kpi">
+              <h2 id="kpi-recebido-rotulo" class="kpi-rotulo">Recebido no mês</h2>
+              <p id="kpi-recebido" class="kpi-valor"></p>
+              <p id="kpi-recebido-detalhe" class="kpi-detalhe"></p>
+            </article>
+            <article class="kpi">
+              <h2 class="kpi-rotulo">A receber</h2>
+              <p id="kpi-receber" class="kpi-valor"></p>
+              <p id="kpi-receber-detalhe" class="kpi-detalhe"></p>
+            </article>
+            <article class="kpi">
+              <h2 class="kpi-rotulo">Saldo acabando</h2>
+              <p id="kpi-renovar" class="kpi-valor"></p>
+              <p id="kpi-renovar-detalhe" class="kpi-detalhe"></p>
+            </article>
+          </div>
+
+          <div class="graficos">
+            <article class="cartao">
+              <h2 class="cartao-titulo">Recebido por mês</h2>
+              <p class="cartao-sub">Pacotes pagos nos últimos 6 meses, pela data do pagamento</p>
+              <div class="grafico">
+                <canvas id="grafico-recebido" role="img" aria-label="Gráfico de barras com o valor recebido em cada um dos últimos 6 meses. Os valores estão em Ver os valores, logo abaixo."></canvas>
+              </div>
+              <details class="tabela-dados">
+                <summary>Ver os valores</summary>
+                <table>
+                  <thead><tr><th scope="col">Mês</th><th scope="col">Recebido</th></tr></thead>
+                  <tbody id="tabela-recebido"></tbody>
+                </table>
+              </details>
+            </article>
+
+            <article class="cartao">
+              <h2 class="cartao-titulo">Aulas por semana</h2>
+              <p class="cartao-sub">Aulas dadas e faltas nas últimas 8 semanas</p>
+              <ul class="legenda">
+                <li><span class="amostra amostra-1" aria-hidden="true"></span>Dadas</li>
+                <li><span class="amostra amostra-2" aria-hidden="true"></span>Faltas</li>
+              </ul>
+              <div class="grafico">
+                <canvas id="grafico-aulas" role="img" aria-label="Gráfico de barras empilhadas com as aulas dadas e as faltas de cada uma das últimas 8 semanas. Os valores estão em Ver os valores, logo abaixo."></canvas>
+              </div>
+              <details class="tabela-dados">
+                <summary>Ver os valores</summary>
+                <table>
+                  <thead><tr><th scope="col">Semana</th><th scope="col">Dadas</th><th scope="col">Faltas</th></tr></thead>
+                  <tbody id="tabela-aulas"></tbody>
+                </table>
+              </details>
+            </article>
+          </div>
+
+          <article class="cartao">
+            <h2 class="cartao-titulo">Precisam renovar</h2>
+            <p class="cartao-sub">Alunos ativos com 2 aulas ou menos no pacote</p>
+            <ul id="lista-renovar" class="lista lista-embutida"></ul>
+            <p id="renovar-vazio" class="cartao-vazio" hidden>Ninguém precisa renovar agora.</p>
+          </article>
         </div>
       </section>
     </main>

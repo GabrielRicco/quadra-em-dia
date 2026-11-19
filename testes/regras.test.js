@@ -19,6 +19,10 @@ import {
   filtrarPacotes,
   pacotesParaAgendar,
   aulasDoDia,
+  resumoFinanceiro,
+  recebidoPorMes,
+  alunosParaRenovar,
+  aulasPorSemana,
 } from '../js/regras.js';
 
 test('CA01 · nome com 1 letra é recusado; 2 a 80 é aceito', () => {
@@ -162,4 +166,48 @@ test('agendar aula só em pacote com saldo de aluno ativo', () => {
     { id: 'p3', aluno_id: 'bia', saldo: 5 }, // aluna inativa
   ];
   assert.deepEqual(pacotesParaAgendar(pacotes, alunos).map((p) => p.id), ['p1']);
+});
+
+// ---------- Resumo (RF08) ----------
+const pago = (valor, pago_em) => ({ valor, pago: true, pago_em });
+const aberto = (valor) => ({ valor, pago: false, pago_em: null });
+
+test('RF08 · recebido no mês (pela data do Pix) e total a receber', () => {
+  const pacotes = [pago(400, '2026-11-05'), pago(300, '2026-10-20'), aberto(500), aberto(250.5), pago(0.1, '2026-11-18'), pago(0.2, '2026-11-19')];
+  assert.deepEqual(resumoFinanceiro(pacotes, '2026-11-19'), {
+    recebidoNoMes: 400.3, // soma em centavos: 0,1 + 0,2 não vira 0,30000000000000004
+    pagosNoMes: 3,
+    aReceber: 750.5,
+    emAberto: 2,
+  });
+});
+
+test('RF08 · recebido por mês nos últimos meses, com zero nos meses sem pagamento', () => {
+  const pacotes = [pago(400, '2026-11-05'), pago(300, '2026-09-20'), pago(200, '2026-09-01'), pago(999, '2026-05-30')];
+  assert.deepEqual(recebidoPorMes(pacotes, '2026-11-19', 3), [
+    { mes: '2026-09', total: 500 },
+    { mes: '2026-10', total: 0 },
+    { mes: '2026-11', total: 400 },
+  ]);
+  assert.equal(recebidoPorMes([], '2026-01-10', 2)[0].mes, '2025-12'); // vira o ano
+});
+
+test('RF08 e CA07 · quem precisa renovar: um por aluno ativo, menor saldo primeiro', () => {
+  const alunos = [{ id: 'ana', ativo: true }, { id: 'bia', ativo: true }, { id: 'caio', ativo: false }];
+  const pacotes = [
+    { id: 'p1', aluno_id: 'ana', aluno_nome: 'Ana', saldo: 2, inicio: '2026-10-01' }, // CA07
+    { id: 'p2', aluno_id: 'bia', aluno_nome: 'Bia', saldo: 0, inicio: '2026-09-01' },
+    { id: 'p3', aluno_id: 'bia', aluno_nome: 'Bia', saldo: 1, inicio: '2026-11-01' }, // o mais recente da Bia
+    { id: 'p4', aluno_id: 'caio', aluno_nome: 'Caio', saldo: 1, inicio: '2026-11-01' }, // inativo
+  ];
+  assert.deepEqual(alunosParaRenovar(pacotes, alunos).map((p) => p.id), ['p3', 'p1']);
+});
+
+test('aulas dadas e faltas por semana (segunda a domingo); cancelada e agendada não contam', () => {
+  const aula = (d, status) => ({ inicio: new Date(2026, 10, d, 9).toISOString(), status });
+  const aulas = [aula(16, 'dada'), aula(19, 'dada'), aula(22, 'falta'), aula(20, 'cancelada'), aula(12, 'dada'), aula(25, 'agendada')];
+  assert.deepEqual(aulasPorSemana(aulas, '2026-11-19', 2), [
+    { semana: '2026-11-09', dadas: 1, faltas: 0 },
+    { semana: '2026-11-16', dadas: 2, faltas: 1 },
+  ]);
 });

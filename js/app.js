@@ -4,6 +4,7 @@ import { supabase } from './supabase.js';
 import { carregarAlunos, limparAlunos } from './alunos.js';
 import { carregarPacotes, limparPacotes } from './pacotes.js';
 import { carregarAulas, limparAulas } from './hoje.js';
+import { mostrarResumo, limparResumo } from './resumo.js';
 import {
   entrarLogin, entrarSecao, entrarEmCascata, encherBarras, aoPressionar,
 } from './animacoes.js';
@@ -96,6 +97,8 @@ function mostrarAba() {
   entrarSecao(secao);
   entrarEmCascata(secao.querySelectorAll('.lista > li'));
   encherBarras(secao.querySelectorAll('.barra-cheia'));
+  // números contam e os gráficos aparecem (o Chart.js só baixa aqui); só com alguém logado
+  if (aba === 'resumo' && usuarioAtual) mostrarResumo();
 }
 
 window.addEventListener('hashchange', mostrarAba);
@@ -107,10 +110,12 @@ async function carregarDados() {
   await carregarAulas();
 }
 
+// O Resumo carrega sozinho quando os pacotes chegam (evento "pacotes-mudaram")
 function limparDados() {
   limparAlunos();
   limparPacotes();
   limparAulas();
+  limparResumo();
 }
 
 // ---------- Troca de tela conforme a sessão ----------

@@ -17,6 +17,10 @@ import {
   rotuloDoDia,
   dataPorExtenso,
   formatarDiaCurto,
+  inicioDaSemana,
+  nomeDoMes,
+  rotuloMes,
+  formatarReaisInteiros,
 } from '../js/formato.js';
 
 test('busca ignora acento, maiúscula e espaço nas pontas', () => {
@@ -72,4 +76,13 @@ test('título e data do dia escritos em português', () => {
   assert.equal(rotuloDoDia('2026-11-21', '2026-11-19'), 'Sábado');
   assert.equal(dataPorExtenso('2026-11-19'), '19 de novembro');
   assert.equal(formatarDiaCurto(new Date(2026, 10, 19, 8).toISOString()), 'qui, 19/11');
+});
+
+test('resumo: semana começa na segunda, mês por extenso e reais sem centavos no eixo', () => {
+  assert.equal(inicioDaSemana('2026-11-19'), '2026-11-16'); // quinta → segunda
+  assert.equal(inicioDaSemana('2026-11-22'), '2026-11-16'); // domingo ainda é da mesma semana
+  assert.equal(inicioDaSemana('2026-11-16'), '2026-11-16');
+  assert.equal(nomeDoMes('2026-11'), 'novembro');
+  assert.equal(rotuloMes('2026-03'), 'mar');
+  assert.equal(formatarReaisInteiros(1500).replace(/\s/g, ' '), 'R$ 1.500');
 });

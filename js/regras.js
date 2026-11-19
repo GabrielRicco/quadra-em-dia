@@ -2,7 +2,7 @@
 // Funções puras: sem DOM e sem rede, para serem testadas com `npm test`.
 // Cada validação devolve a mensagem de erro exata do SPEC, ou null se está tudo certo.
 // O banco (sql/schema.sql) repete as mesmas regras: a tela avisa, o banco garante.
-import { normalizarTexto, limitesDoDia } from './formato.js';
+import { normalizarTexto, limitesDoDia, inicioDaSemana, somarDias, dataISO } from './formato.js';
 
 export const MENSAGENS = {
   nome: 'O nome precisa ter entre 2 e 80 caracteres.',
@@ -152,4 +152,62 @@ export function traduzirErroBanco(erro) {
     return 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
   }
   return ERRO_GENERICO; // nunca mostra o texto técnico do banco para o usuário
+}
+
+// ---------- Resumo (RF08) ----------
+// Dinheiro somado em centavos: 0,10 + 0,20 dá 0,30 (e não 0,30000000000000004)
+const emCentavos = (valor) => Math.round(Number(valor) * 100);
+const somarValores = (pacotes) => pacotes.reduce((total, p) => total + emCentavos(p.valor), 0) / 100;
+
+// Recebido no mês de hoje (pela data do pagamento) e o que falta receber (pacotes não pagos)
+export function resumoFinanceiro(pacotes, hoje) {
+  const mes = hoje.slice(0, 7);
+  const pagosNoMes = pacotes.filter((p) => p.pago && p.pago_em?.startsWith(mes));
+  const emAberto = pacotes.filter((p) => !p.pago);
+  return {
+    recebidoNoMes: somarValores(pagosNoMes),
+    pagosNoMes: pagosNoMes.length,
+    aReceber: somarValores(emAberto),
+    emAberto: emAberto.length,
+  };
+}
+
+// Total recebido em cada um dos últimos `meses` meses (o atual por último); mês sem pagamento = 0
+export function recebidoPorMes(pacotes, hoje, meses = 6) {
+  const [ano, mes] = hoje.split('-').map(Number);
+  return Array.from({ length: meses }, (_, i) => {
+    const d = new Date(ano, mes - meses + i, 1);
+    const anoMes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return { mes: anoMes, total: somarValores(pacotes.filter((p) => p.pago && p.pago_em?.startsWith(anoMes))) };
+  });
+}
+
+// RF08 · alunos ativos com saldo de 2 aulas ou menos (mesma regra do filtro, CA07):
+// um por aluno (o pacote mais recente), menor saldo primeiro
+export function alunosParaRenovar(pacotes, alunos) {
+  const ativos = new Set(alunos.filter((a) => a.ativo).map((a) => a.id));
+  const porAluno = new Map();
+  for (const p of pacotesAcabando(pacotes)) {
+    if (!ativos.has(p.aluno_id)) continue;
+    const atual = porAluno.get(p.aluno_id);
+    if (!atual || p.inicio > atual.inicio) porAluno.set(p.aluno_id, p);
+  }
+  return [...porAluno.values()]
+    .sort((a, b) => a.saldo - b.saldo || a.aluno_nome.localeCompare(b.aluno_nome, 'pt-BR'));
+}
+
+// Aulas dadas e faltas por semana (segunda a domingo) nas últimas `semanas` semanas
+export function aulasPorSemana(aulas, hoje, semanas = 8) {
+  const segundaAtual = inicioDaSemana(hoje);
+  const contagem = new Map(
+    Array.from({ length: semanas }, (_, i) => somarDias(segundaAtual, (i - semanas + 1) * 7))
+      .map((semana) => [semana, { semana, dadas: 0, faltas: 0 }]),
+  );
+  for (const aula of aulas) {
+    const semana = contagem.get(inicioDaSemana(dataISO(new Date(aula.inicio))));
+    if (!semana) continue;
+    if (aula.status === 'dada') semana.dadas += 1;
+    else if (aula.status === 'falta') semana.faltas += 1;
+  }
+  return [...contagem.values()];
 }

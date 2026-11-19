@@ -32,6 +32,24 @@ export function entrarEmCascata(elementos) {
   animate(elementos, { opacity: [0, 1], y: [12, 0] }, { duration: 0.35, ease: 'easeOut', delay: stagger(0.035) });
 }
 
+// Número sobe de 0 até o valor (cartões do Resumo); formatar(v) devolve o texto
+export function contarAte(elemento, valor, formatar) {
+  if (semMovimento()) {
+    elemento.textContent = formatar(valor);
+    return;
+  }
+  animate(0, valor, {
+    duration: 0.8,
+    ease: 'easeOut',
+    onUpdate: (atual) => { elemento.textContent = formatar(atual); },
+  });
+}
+
+// Animação dos gráficos do Chart.js: barras crescem da base; nenhuma com menos movimento
+export function animacaoDosGraficos() {
+  return semMovimento() ? false : { duration: 600, easing: 'easeOutQuart' };
+}
+
 // Lista de sugestões do autocompletar desce rapidinho
 export function mostrarLista(lista) {
   if (semMovimento()) return;
