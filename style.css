@@ -582,6 +582,86 @@ input:focus, select:focus, textarea:focus {
 .medidor { display: flex; align-items: center; gap: 0.875rem; padding: 0.75rem 1rem; }
 .cartao-vazio { margin-top: 0.75rem; font-size: 0.9rem; color: var(--cor-suave); }
 
+/* ---------- Agenda: Dia | Mês e calendário do mês ---------- */
+.ferramentas-agenda { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+
+.calendario {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+.semana-cabecalho, .dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.semana-cabecalho { border-bottom: 1px solid var(--cor-borda); }
+.semana-cabecalho span {
+  padding: 0.6rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor-suave);
+}
+.dias { margin: 0; padding: 0; list-style: none; }
+.dias > li { min-width: 0; border-bottom: 1px solid var(--cor-borda); border-right: 1px solid var(--cor-borda); }
+.dias > li:nth-child(7n) { border-right: 0; }
+.dias > li:nth-last-child(-n + 7) { border-bottom: 0; }
+
+.dia {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  height: 100%;
+  min-height: 7.5rem;
+  padding: 0.45rem 0.5rem;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.dia:hover { background: var(--cor-hover); }
+.dia:focus-visible { outline-offset: -2px; }
+.dia-numero {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-bottom: 0.1rem;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.dia-fora { color: var(--cor-suave); background: #f8faf8; }
+.dia-fora .dia-numero { font-weight: 400; }
+.dia-hoje .dia-numero { color: #fff; background: var(--cor-primaria); }
+.dia-escolhido { box-shadow: inset 0 0 0 2px var(--cor-primaria); }
+
+/* Uma aula dentro do dia: a cor diz a situação, o texto diz hora e aluno */
+.aula-mini {
+  display: block;
+  overflow: hidden;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-left: 3px solid var(--cor-borda-forte);
+  border-radius: 4px;
+  color: var(--cor-texto);
+  background: var(--cor-neutra-clara);
+}
+.aula-mini-dada { color: var(--cor-primaria); background: var(--cor-primaria-clara); border-left-color: var(--cor-grafico-1); }
+.aula-mini-falta { color: var(--cor-alerta); background: var(--cor-alerta-clara); border-left-color: var(--cor-grafico-2); }
+.aula-mini-cancelada { color: var(--cor-suave); background: transparent; border-left-color: transparent; text-decoration: line-through; }
+.mais { font-size: 0.75rem; font-weight: 500; color: var(--cor-suave); padding-left: 0.35rem; }
+.contagem { display: none; }
+
 /* Aulas do pacote (no modal do pacote) */
 .historico { display: grid; gap: 0.4rem; }
 .historico-titulo { font-size: 0.875rem; font-weight: 500; }
@@ -749,6 +829,24 @@ input:focus, select:focus, textarea:focus {
   }
   .dialogo-rodape-acoes { width: 100%; }
   .dialogo-rodape-acoes .botao { flex: 1; }
+
+  /* calendário no celular: só o número do dia e quantas aulas tem */
+  .semana-cabecalho span { padding: 0.5rem 0; text-align: center; font-size: 0.75rem; letter-spacing: 0; }
+  .dia { align-items: center; min-height: 3.75rem; padding: 0.35rem 0.15rem; }
+  .aula-mini, .mais { display: none; }
+  .contagem {
+    display: grid;
+    place-items: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--cor-primaria);
+    border-radius: 999px;
+  }
+  .dia-hoje .contagem { color: var(--cor-primaria); background: var(--cor-primaria-clara); }
 
   /* na agenda, os botões dada/falta/cancelada descem para a linha de baixo, largos para o dedo */
   .aula-acoes { width: 100%; padding: 0 0 0.85rem 1.1rem; }

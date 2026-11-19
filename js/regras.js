@@ -91,6 +91,17 @@ export function aulasDoDia(aulas, data) {
     .sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
 }
 
+// Calendário do mês: aulas agrupadas por dia ('AAAA-MM-DD', fuso do aparelho), cada dia em ordem de horário
+export function aulasPorDia(aulas) {
+  const dias = new Map();
+  for (const aula of [...aulas].sort((a, b) => new Date(a.inicio) - new Date(b.inicio))) {
+    const dia = dataISO(new Date(aula.inicio));
+    if (!dias.has(dia)) dias.set(dia, []);
+    dias.get(dia).push(aula);
+  }
+  return dias;
+}
+
 // Agendar aula: só em pacote com saldo, de aluno ativo
 export function pacotesParaAgendar(pacotes, alunos) {
   const ativos = new Set(alunos.filter((a) => a.ativo).map((a) => a.id));

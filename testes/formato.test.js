@@ -21,6 +21,9 @@ import {
   nomeDoMes,
   rotuloMes,
   formatarReaisInteiros,
+  diasDaGradeDoMes,
+  somarMeses,
+  mesPorExtenso,
 } from '../js/formato.js';
 
 test('busca ignora acento, maiúscula e espaço nas pontas', () => {
@@ -85,4 +88,18 @@ test('resumo: semana começa na segunda, mês por extenso e reais sem centavos n
   assert.equal(nomeDoMes('2026-11'), 'novembro');
   assert.equal(rotuloMes('2026-03'), 'mar');
   assert.equal(formatarReaisInteiros(1500).replace(/\s/g, ' '), 'R$ 1.500');
+});
+
+test('calendário: a grade do mês vai de segunda a domingo e inclui as pontas dos meses vizinhos', () => {
+  const novembro = diasDaGradeDoMes('2026-11'); // 1/11/2026 é domingo
+  assert.equal(novembro[0], '2026-10-26');      // segunda antes do dia 1
+  assert.equal(novembro.at(-1), '2026-12-06');  // domingo depois do dia 30
+  assert.equal(novembro.length, 42);
+  assert.equal(diasDaGradeDoMes('2027-02').length, 28); // fevereiro que começa na segunda: 4 semanas
+});
+
+test('calendário: troca de mês e nome do mês por extenso', () => {
+  assert.equal(somarMeses('2026-12', 1), '2027-01');
+  assert.equal(somarMeses('2026-01', -1), '2025-12');
+  assert.equal(mesPorExtenso('2026-11'), 'Novembro de 2026');
 });

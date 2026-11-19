@@ -82,8 +82,12 @@
             Agendar aula
           </button>
 
-          <div class="ferramentas">
-            <div class="navegacao-dias" role="group" aria-label="Escolher o dia da agenda">
+          <div class="ferramentas ferramentas-agenda">
+            <div class="chips" role="radiogroup" aria-label="Ver a agenda por">
+              <label class="chip"><input type="radio" name="modo-agenda" value="dia" checked><span>Dia</span></label>
+              <label class="chip"><input type="radio" name="modo-agenda" value="mes"><span>Mês</span></label>
+            </div>
+            <div class="navegacao-dias" role="group" aria-label="Escolher o dia ou o mês da agenda">
               <button type="button" id="dia-anterior" class="botao-dia" aria-label="Dia anterior">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
               </button>
@@ -101,6 +105,14 @@
           <p>Toque em "Agendar aula" para marcar uma.</p>
         </div>
         <ul id="lista-aulas" class="lista"></ul>
+
+        <!-- Calendário do mês (modo "Mês"); cada dia abre a lista daquele dia -->
+        <div id="calendario" class="calendario" hidden>
+          <div class="semana-cabecalho" aria-hidden="true">
+            <span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span><span>dom</span>
+          </div>
+          <ol id="dias-do-mes" class="dias"></ol>
+        </div>
       </section>
 
       <section id="secao-alunos" data-secao="alunos" hidden>

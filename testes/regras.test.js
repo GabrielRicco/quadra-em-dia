@@ -23,6 +23,7 @@ import {
   recebidoPorMes,
   alunosParaRenovar,
   aulasPorSemana,
+  aulasPorDia,
 } from '../js/regras.js';
 
 test('CA01 · nome com 1 letra é recusado; 2 a 80 é aceito', () => {
@@ -221,4 +222,11 @@ test('aulas dadas e faltas por semana (segunda a domingo); cancelada e agendada 
     { semana: '2026-11-09', dadas: 1, faltas: 0 },
     { semana: '2026-11-16', dadas: 2, faltas: 1 },
   ]);
+});
+
+test('calendário: aulas agrupadas por dia, cada dia em ordem de horário', () => {
+  const aula = (id, d, h) => ({ id, inicio: new Date(2026, 10, d, h).toISOString() });
+  const dias = aulasPorDia([aula('b', 19, 17), aula('c', 20, 8), aula('a', 19, 7)]);
+  assert.deepEqual([...dias.keys()], ['2026-11-19', '2026-11-20']);
+  assert.deepEqual(dias.get('2026-11-19').map((a) => a.id), ['a', 'b']);
 });

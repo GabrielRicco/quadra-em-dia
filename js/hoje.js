@@ -1,20 +1,21 @@
-// Aba Hoje · a agenda do dia.
+// Aba Hoje · a agenda, vista por dia (lista) ou por mês (calendário).
 // RF05: aulas do dia com aluno, horário, saldo do pacote e botões "dada", "falta" e "cancelada".
 // RF04: agendar, listar, editar e excluir aulas (cada aula sai de um pacote).
 // RN03 (horário sobreposto) e RN04 (sem saldo) na tela (js/regras.js) e no banco (sql/schema.sql).
 import { supabase } from './supabase.js';
 import {
-  validarConflito, validarUsoDeAula, calcularFim, aulasDoDia,
+  validarConflito, validarUsoDeAula, calcularFim, aulasDoDia, aulasPorDia,
   pacotesAcabando, pacotesParaAgendar, traduzirErroBanco,
 } from './regras.js';
 import {
   dataISO, formatarHora, juntarDataHora, somarDias, limitesDoDia,
   duracaoEmMinutos, rotuloDoDia, dataPorExtenso, SITUACOES,
+  diasDaGradeDoMes, somarMeses, mesPorExtenso,
 } from './formato.js';
 import {
   el, mostrarAviso, travarBotoes, confirmar, avisar, abrirDialogo, fecharDialogo,
 } from './tela.js';
-import { entrarEmCascata, destacar, aoPressionar } from './animacoes.js';
+import { entrarEmCascata, entrarSecao, destacar, aoPressionar } from './animacoes.js';
 import { listaDePacotes, carregarPacotes } from './pacotes.js';
 import { listaDeAlunos } from './alunos.js';
 import { criarAutocompletar } from './autocompletar.js';
@@ -28,6 +29,9 @@ const botaoAnterior = document.getElementById('dia-anterior');
 const botaoHoje = document.getElementById('dia-hoje');
 const botaoSeguinte = document.getElementById('dia-seguinte');
 const campoDia = document.getElementById('dia-escolhido');
+const radiosModo = document.querySelectorAll('input[name="modo-agenda"]');
+const calendario = document.getElementById('calendario');
+const diasDoMes = document.getElementById('dias-do-mes');
 const dialogo = document.getElementById('dialogo-aula');
 const tituloDialogo = document.getElementById('dialogo-aula-titulo');
 const form = document.getElementById('form-aula');
@@ -43,24 +47,36 @@ const campos = {
   situacao: document.getElementById('aula-status'),
 };
 
-let dia = dataISO(new Date()); // dia mostrado na agenda ('AAAA-MM-DD')
+let dia = dataISO(new Date()); // dia mostrado na lista ('AAAA-MM-DD')
+let mes = dia.slice(0, 7);     // mês mostrado no calendário ('AAAA-MM')
+let modo = 'dia';              // 'dia' (lista) ou 'mes' (calendário)
 let aulas = [];
 let carregou = false;          // evita piscar "nenhuma aula" antes da primeira busca
 let editando = null;           // aula aberta no modal (null = nova)
 
 const hoje = () => dataISO(new Date());
 const pacotePorId = (id) => listaDePacotes().find((p) => p.id === id);
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+const AULAS_NA_CELULA = 3; // no calendário, o resto vira "+N"
 
 // ---------- Carregar e desenhar ----------
+// No modo mês, busca a grade inteira (inclui as pontas dos meses vizinhos)
+function periodo() {
+  if (modo === 'dia') return limitesDoDia(dia);
+  const grade = diasDaGradeDoMes(mes);
+  return { de: limitesDoDia(grade[0]).de, ate: limitesDoDia(grade.at(-1)).ate };
+}
+
 export async function carregarAulas({ destaqueId = null, animar = true } = {}) {
-  const { de, ate } = limitesDoDia(dia);
+  const { de, ate } = periodo();
   const { data, error } = await supabase
     .from('aulas')
     .select('id, pacote_id, inicio, fim, status')
     .gte('inicio', de)
     .lt('inicio', ate);
   if (error) return avisar(traduzirErroBanco(error), 'erro');
-  aulas = aulasDoDia(data, dia); // CA08: só o dia escolhido, em ordem de horário
+  // CA08: no modo dia, só o dia escolhido, em ordem de horário
+  aulas = modo === 'dia' ? aulasDoDia(data, dia) : data;
   carregou = true;
   desenhar({ destaqueId, animar });
 }
@@ -70,7 +86,13 @@ export function limparAulas() {
   aulas = [];
   carregou = false;
   dia = hoje();
+  mes = dia.slice(0, 7);
+  modo = 'dia';
+  radiosModo.forEach((radio) => { radio.checked = radio.value === 'dia'; });
   lista.replaceChildren();
+  diasDoMes.replaceChildren();
+  lista.hidden = false;
+  calendario.hidden = true;
   vazio.hidden = true;
   atualizarCabecalho();
 }
@@ -84,11 +106,27 @@ document.addEventListener('pacotes-mudaram', () => {
 });
 
 function atualizarCabecalho() {
+  const noMes = modo === 'mes';
+  botaoAnterior.setAttribute('aria-label', noMes ? 'Mês anterior' : 'Dia anterior');
+  botaoSeguinte.setAttribute('aria-label', noMes ? 'Próximo mês' : 'Próximo dia');
+  campoDia.hidden = noMes;
+
+  if (noMes) {
+    titulo.textContent = mesPorExtenso(mes);
+    const doMes = aulas.filter((a) => a.status !== 'cancelada' && dataISO(new Date(a.inicio)).startsWith(mes));
+    const aDar = doMes.filter((a) => a.status === 'agendada').length;
+    subtitulo.textContent = doMes.length
+      ? `${plural(doMes.length, 'aula', 'aulas')} no mês${aDar ? ` · ${aDar} a dar` : ''}`
+      : 'Nenhuma aula neste mês';
+    botaoHoje.setAttribute('aria-pressed', String(mes === hoje().slice(0, 7)));
+    return;
+  }
+
   titulo.textContent = rotuloDoDia(dia, hoje());
   const n = aulas.length;
   const aDar = aulas.filter((a) => a.status === 'agendada').length;
   const partes = [dataPorExtenso(dia)];
-  if (n) partes.push(`${n} ${n === 1 ? 'aula' : 'aulas'}`);
+  if (n) partes.push(plural(n, 'aula', 'aulas'));
   if (aDar && aDar < n) partes.push(`${aDar} a dar`);
   subtitulo.textContent = partes.join(' · ');
   campoDia.value = dia;
@@ -100,6 +138,14 @@ function desenhar({ destaqueId = null, animar = true } = {}) {
   const acabando = new Set(pacotesAcabando(listaDePacotes()).map((p) => p.id));
 
   atualizarCabecalho();
+  const noMes = modo === 'mes';
+  calendario.hidden = !noMes;
+  lista.hidden = noMes;
+  if (noMes) {
+    vazio.hidden = true;
+    desenharMes(pacotes, animar);
+    return;
+  }
   vazio.hidden = !carregou || aulas.length > 0;
   lista.replaceChildren(...aulas.map((a) => itemDaAula(a, pacotes.get(a.pacote_id), acabando)));
   aoPressionar(lista.querySelectorAll('.aula-principal'), 0.985);
@@ -107,6 +153,49 @@ function desenhar({ destaqueId = null, animar = true } = {}) {
 
   if (destaqueId) destacar(lista.querySelector(`[data-id="${CSS.escape(destaqueId)}"]`));
   else if (animar) entrarEmCascata(lista.children);
+}
+
+// ---------- Calendário do mês ----------
+// Cada dia é um botão: mostra o número, até 3 aulas ("07:00 Ana") e "+N"; no celular, só a contagem.
+// Tocar no dia abre a lista daquele dia.
+function desenharMes(pacotes, animar) {
+  const porDia = aulasPorDia(aulas);
+  const hojeISO = hoje();
+
+  diasDoMes.replaceChildren(...diasDaGradeDoMes(mes).map((data) => {
+    const doDia = porDia.get(data) ?? [];
+    const valem = doDia.filter((a) => a.status !== 'cancelada').length;
+    const classes = ['dia'];
+    if (!data.startsWith(mes)) classes.push('dia-fora');
+    if (data === hojeISO) classes.push('dia-hoje');
+    if (data === dia) classes.push('dia-escolhido');
+
+    return el('li', {},
+      el('button', {
+        type: 'button',
+        class: classes.join(' '),
+        'aria-label': `${dataPorExtenso(data)}: ${valem ? plural(valem, 'aula', 'aulas') : 'nenhuma aula'}`,
+        'aria-current': data === hojeISO ? 'date' : null,
+        onclick: () => abrirDia(data),
+      },
+        el('span', { class: 'dia-numero' }, String(Number(data.slice(8)))),
+        doDia.slice(0, AULAS_NA_CELULA).map((aula) => el('span', { class: `aula-mini aula-mini-${aula.status}` },
+          `${formatarHora(aula.inicio)} ${(pacotes.get(aula.pacote_id)?.aluno_nome ?? '').split(' ')[0]}`)),
+        doDia.length > AULAS_NA_CELULA ? el('span', { class: 'mais' }, `+${doDia.length - AULAS_NA_CELULA}`) : null,
+        valem ? el('span', { class: 'contagem' }, String(valem)) : null,
+      ),
+    );
+  }));
+
+  aoPressionar(diasDoMes.querySelectorAll('.dia'), 0.97);
+  if (animar) entrarSecao(calendario);
+}
+
+function abrirDia(data) {
+  modo = 'dia';
+  dia = data;
+  radiosModo.forEach((radio) => { radio.checked = radio.value === 'dia'; });
+  carregarAulas();
 }
 
 function textoSaldo(pacote) {
@@ -181,10 +270,29 @@ function irPara(novoDia) {
   carregarAulas();
 }
 
-botaoAnterior.addEventListener('click', () => irPara(somarDias(dia, -1)));
-botaoSeguinte.addEventListener('click', () => irPara(somarDias(dia, 1)));
-botaoHoje.addEventListener('click', () => irPara(hoje()));
+// As setas andam um dia na lista e um mês no calendário
+function andar(passo) {
+  if (modo === 'dia') return irPara(somarDias(dia, passo));
+  mes = somarMeses(mes, passo);
+  carregarAulas();
+}
+
+botaoAnterior.addEventListener('click', () => andar(-1));
+botaoSeguinte.addEventListener('click', () => andar(1));
+botaoHoje.addEventListener('click', () => {
+  if (modo === 'dia') return irPara(hoje());
+  dia = hoje();
+  mes = dia.slice(0, 7);
+  carregarAulas();
+});
 campoDia.addEventListener('change', () => irPara(campoDia.value));
+
+// Dia (lista) ou Mês (calendário)
+radiosModo.forEach((radio) => radio.addEventListener('change', () => {
+  modo = radio.value;
+  mes = dia.slice(0, 7);
+  carregarAulas();
+}));
 
 // ---------- Agendar e editar (RF04) ----------
 const autocompletarAluno = criarAutocompletar(campos.aluno, {
@@ -288,7 +396,8 @@ form.addEventListener('submit', async (evento) => {
 
   fecharDialogo(dialogo);
   avisar(aula ? 'Aula atualizada.' : 'Aula agendada.');
-  dia = campos.data.value; // a agenda vai para o dia da aula salva
+  dia = campos.data.value; // a agenda (lista ou calendário) vai para o dia da aula salva
+  mes = dia.slice(0, 7);
   await atualizarDepoisDeMudar(data.id);
 });
 

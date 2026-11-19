@@ -66,6 +66,31 @@ export function rotuloMes(anoMes) {
   return MESES_CURTOS[Number(anoMes.slice(5, 7)) - 1];
 }
 
+// ---------- Calendário do mês ----------
+// '2026-11' + 1 → '2026-12'
+export function somarMeses(anoMes, meses) {
+  const [ano, mes] = anoMes.split('-').map(Number);
+  const d = new Date(ano, mes - 1 + meses, 1);
+  return `${d.getFullYear()}-${doisDigitos(d.getMonth() + 1)}`;
+}
+
+// '2026-11' → "Novembro de 2026"
+export function mesPorExtenso(anoMes) {
+  const nome = nomeDoMes(anoMes);
+  return `${nome.charAt(0).toUpperCase()}${nome.slice(1)} de ${anoMes.slice(0, 4)}`;
+}
+
+// Todos os dias da grade do mês, de segunda a domingo: começa na segunda antes (ou no) dia 1
+// e termina no domingo depois (ou no) último dia, então pega pontas dos meses vizinhos
+export function diasDaGradeDoMes(anoMes) {
+  const [ano, mes] = anoMes.split('-').map(Number);
+  const ultimoDia = dataISO(new Date(ano, mes, 0));
+  const fim = somarDias(inicioDaSemana(ultimoDia), 6);
+  const dias = [];
+  for (let dia = inicioDaSemana(`${anoMes}-01`); dia <= fim; dia = somarDias(dia, 1)) dias.push(dia);
+  return dias;
+}
+
 // Segunda-feira da semana do dia (a semana vai de segunda a domingo)
 export function inicioDaSemana(data) {
   const diaDaSemana = diaLocal(data).getDay(); // 0 = domingo
