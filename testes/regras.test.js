@@ -27,7 +27,11 @@ import {
   vencimentoDoPacote,
   pacoteVencido,
   validarPrazoDaAula,
+  gerarAulasDoPadrao,
+  conflitosDoPadrao,
+  avisoDoPadrao,
 } from '../js/regras.js';
+import { dataISO, formatarHora } from '../js/formato.js';
 
 test('CA01 · nome com 1 letra é recusado; 2 a 80 é aceito', () => {
   assert.equal(validarAluno({ nome: 'A' }), MENSAGENS.nome);
@@ -260,4 +264,63 @@ test('CA13 · pacote vencido com aulas sobrando: precisa renovar e sai das opç�
   const vencido = { id: 'v', aluno_id: 'ana', aluno_nome: 'Ana', saldo: 5, inicio: '2026-10-01' };
   assert.deepEqual(pacotesAcabando([vencido], HOJE).map((p) => p.id), ['v']);
   assert.deepEqual(pacotesParaAgendar([vencido], alunos, HOJE), []);
+});
+
+// ---------- RF10 · horário fixo ao criar o pacote ----------
+// Quinta-feira, 19/11/2026, 10h no fuso do aparelho
+const AGORA = new Date(2026, 10, 19, 10, 0);
+const TER_7H = { dia: 2, hora: '07:00' };
+const QUI_18H = { dia: 4, hora: '18:00' };
+const quando = ({ aulas }) => aulas.map((a) => `${dataISO(a.inicio)} ${formatarHora(a.inicio)}`);
+const padrao = (opcoes) =>
+  gerarAulasDoPadrao({ compra: HOJE, quantidade: 8, duracao: 60, agora: AGORA, ...opcoes });
+
+test('RF10 · gera as aulas nos dias e horários de cada dia, em ordem', () => {
+  const r = padrao({ quantidade: 4, horarios: [TER_7H, QUI_18H] });
+  assert.deepEqual(quando(r), ['2026-11-19 18:00', '2026-11-24 07:00', '2026-11-26 18:00', '2026-12-01 07:00']);
+  assert.equal(formatarHora(r.aulas[0].fim), '19:00');
+  assert.equal(r.naoCouberam, 0);
+});
+
+test('RF10 · para ao completar a quantidade; sem dia marcado não gera nada', () => {
+  assert.deepEqual(quando(padrao({ quantidade: 2, horarios: [TER_7H, QUI_18H] })), ['2026-11-19 18:00', '2026-11-24 07:00']);
+  assert.deepEqual(padrao({ horarios: [] }), { aulas: [], naoCouberam: 0 });
+});
+
+test('RF10 e CA16 · para no vencimento (inclusive) e conta as que não couberam', () => {
+  const r = padrao({ horarios: [{ dia: 6, hora: '08:00' }] }); // sábados; vence em 19/12, um sábado
+  assert.deepEqual(quando(r), ['2026-11-21 08:00', '2026-11-28 08:00', '2026-12-05 08:00', '2026-12-12 08:00', '2026-12-19 08:00']);
+  assert.equal(r.naoCouberam, 3);
+});
+
+test('RF10 · compra registrada com data passada começa de hoje', () => {
+  const r = padrao({ compra: '2026-11-10', horarios: [QUI_18H] }); // vence em 10/12, uma quinta
+  assert.deepEqual(quando(r), ['2026-11-19 18:00', '2026-11-26 18:00', '2026-12-03 18:00', '2026-12-10 18:00']);
+  assert.equal(r.naoCouberam, 4);
+});
+
+test('RF10 · hoje só entra se o horário ainda não passou', () => {
+  const r = padrao({ quantidade: 2, horarios: [QUI_18H], agora: new Date(2026, 10, 19, 18, 30) });
+  assert.deepEqual(quando(r), ['2026-11-26 18:00', '2026-12-03 18:00']);
+});
+
+test('CA15 · conflito com aula já marcada; cancelada não conta e aula colada não conflita', () => {
+  const novas = padrao({ quantidade: 3, horarios: [TER_7H, QUI_18H] }).aulas; // 19/11 18h, 24/11 7h, 26/11 18h
+  const em = (dia, hora, min = 0) => new Date(2026, 10, dia, hora, min).toISOString();
+  const existentes = [
+    { id: 'colada', pacote_id: 'x', inicio: em(19, 17), fim: em(19, 18), status: 'dada' },
+    { id: 'cancelada', pacote_id: 'x', inicio: em(24, 7), fim: em(24, 8), status: 'cancelada' },
+    { id: 'heitor', pacote_id: 'x', inicio: em(26, 17, 30), fim: em(26, 18, 30), status: 'agendada' },
+  ];
+  assert.deepEqual(conflitosDoPadrao(novas, existentes).map((a) => a?.id ?? null), [null, null, 'heitor']);
+});
+
+test('CA16 · aviso quando o horário fixo não cabe até o vencimento', () => {
+  assert.equal(avisoDoPadrao(5, 8, '2026-12-19'),
+    'Só cabem 5 das 8 aulas até o vencimento (19/12). As outras 3 você agenda à mão ou elas se perdem.');
+  assert.equal(avisoDoPadrao(1, 2, '2026-12-19'),
+    'Só cabe 1 das 2 aulas até o vencimento (19/12). A outra você agenda à mão ou ela se perde.');
+  assert.equal(avisoDoPadrao(0, 4, '2026-12-19'), 'Nenhuma aula deste horário cabe até o vencimento (19/12).');
+  assert.equal(avisoDoPadrao(8, 8, '2026-12-19'), null);
+  assert.equal(avisoDoPadrao(0, NaN, '2026-12-19'), null); // quantidade ainda não digitada
 });

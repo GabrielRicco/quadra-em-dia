@@ -2,7 +2,10 @@
 // Funções puras: sem DOM e sem rede, para serem testadas com `npm test`.
 // Cada validação devolve a mensagem de erro exata do SPEC, ou null se está tudo certo.
 // O banco (sql/schema.sql) repete as mesmas regras: a tela avisa, o banco garante.
-import { normalizarTexto, limitesDoDia, inicioDaSemana, somarDias, dataISO } from './formato.js';
+import {
+  normalizarTexto, limitesDoDia, inicioDaSemana, somarDias, dataISO,
+  juntarDataHora, diaDaSemana, formatarData,
+} from './formato.js';
 
 export const MENSAGENS = {
   nome: 'O nome precisa ter entre 2 e 80 caracteres.',
@@ -14,6 +17,8 @@ export const MENSAGENS = {
   vencido: 'Esta aula fica depois do vencimento do pacote. Crie um novo pacote para o aluno.',
   // mudar a data da compra não pode deixar aulas para fora do novo vencimento (só o banco checa)
   prazoPacote: 'Já existem aulas depois do novo vencimento deste pacote. Mude essas aulas antes.',
+  // horário fixo do pacote (RF10): dia marcado sem horário
+  horarioFaltando: 'Informe o horário de cada dia escolhido.',
 };
 
 // ---------- RN07 · vencimento do pacote ----------
@@ -33,6 +38,44 @@ export function pacoteVencido(pacote, hoje) {
 export function validarPrazoDaAula({ inicio, status }, pacote) {
   if (status === 'cancelada' || !pacote) return null;
   return dataISO(new Date(inicio)) > vencimentoDoPacote(pacote.inicio) ? MENSAGENS.vencido : null;
+}
+
+// ---------- RF10 · horário fixo ao criar o pacote ----------
+// horarios: [{ dia, hora }], com dia da semana (0 = domingo) e hora 'HH:MM'; duracao em minutos;
+// agora: o instante atual (recebido para o teste não depender do relógio).
+// As aulas começam na data da compra (ou hoje, se a compra foi registrada com data passada; hoje só
+// se o horário ainda não passou) e vão até completar a quantidade ou chegar o vencimento (RN07).
+export function gerarAulasDoPadrao({ compra, quantidade, horarios, duracao, agora }) {
+  const aulas = [];
+  if (!horarios.length || !(quantidade > 0)) return { aulas, naoCouberam: 0 };
+  const hoje = dataISO(agora);
+  const vencimento = vencimentoDoPacote(compra);
+  for (let dia = compra > hoje ? compra : hoje; dia <= vencimento && aulas.length < quantidade; dia = somarDias(dia, 1)) {
+    const horario = horarios.find((h) => h.dia === diaDaSemana(dia));
+    if (!horario) continue;
+    const inicio = juntarDataHora(dia, horario.hora);
+    if (inicio > agora) aulas.push({ inicio, fim: new Date(inicio.getTime() + duracao * 60_000) });
+  }
+  return { aulas, naoCouberam: quantidade - aulas.length };
+}
+
+// CA15 · para cada aula nova, a aula já marcada (não cancelada) que bate com ela (RN03), ou null
+export function conflitosDoPadrao(aulasNovas, aulasExistentes) {
+  const ativas = aulasExistentes.filter((a) => a.status !== 'cancelada');
+  return aulasNovas.map((nova) => ativas.find((a) => horariosSobrepostos(nova, a)) ?? null);
+}
+
+// CA16 · aviso quando o horário fixo não cabe até o vencimento; null quando cabe tudo
+export function avisoDoPadrao(cabem, quantidade, vencimento) {
+  const faltam = quantidade - cabem;
+  if (!(faltam > 0)) return null;
+  const ate = `até o vencimento (${formatarData(vencimento).slice(0, 5)})`;
+  if (cabem === 0) return `Nenhuma aula deste horário cabe ${ate}.`;
+  const cabe = cabem === 1 ? 'Só cabe 1' : `Só cabem ${cabem}`;
+  const resto = faltam === 1
+    ? 'A outra você agenda à mão ou ela se perde.'
+    : `As outras ${faltam} você agenda à mão ou elas se perdem.`;
+  return `${cabe} das ${quantidade} aulas ${ate}. ${resto}`;
 }
 
 const STATUS_QUE_CONSOMEM = ['dada', 'falta'];

@@ -97,6 +97,11 @@ export function inicioDaSemana(data) {
   return somarDias(data, -((diaDaSemana + 6) % 7));
 }
 
+// 'AAAA-MM-DD' → dia da semana (0 = domingo), sem o fuso mudar o dia
+export function diaDaSemana(data) {
+  return diaLocal(data).getDay();
+}
+
 const doisDigitos = (n) => String(n).padStart(2, '0');
 
 // 'AAAA-MM-DD' → Date à meia-noite local
