@@ -23,7 +23,7 @@ js/autocompletar.js campo com sugestões (combobox acessível) para escolher alu
 js/app.js           login, abas e carga dos dados ao entrar
 js/alunos.js        aba Alunos (uma aba por arquivo)
 js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca, filtros e aulas do pacote
-js/hoje.js          aba Hoje: agenda do dia, agendar/editar/excluir aula, botões dada/falta/cancelada
+js/hoje.js          aba Hoje: agenda por dia (lista) ou por mês (calendário), agendar/editar/excluir aula, botões dada/falta/cancelada
 js/resumo.js        aba Resumo: números do mês, gráficos (Chart.js baixado só ao abrir a aba) e tabela de cada gráfico
                     (as abas conversam por eventos: "alunos-mudaram" e "pacotes-mudaram")
 sql/schema.sql      tabelas, constraints, triggers e políticas de RLS
