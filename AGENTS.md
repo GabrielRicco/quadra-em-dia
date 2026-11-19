@@ -22,7 +22,9 @@ js/animacoes.js     todas as animações (Motion); respeita prefers-reduced-moti
 js/autocompletar.js campo com sugestões (combobox acessível) para escolher aluno; use no lugar de <select> longo
 js/app.js           login, abas e carga dos dados ao entrar
 js/alunos.js        aba Alunos (uma aba por arquivo)
-js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca e filtros
+js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca, filtros e aulas do pacote
+js/hoje.js          aba Hoje: agenda do dia, agendar/editar/excluir aula, botões dada/falta/cancelada
+                    (as abas conversam por eventos: "alunos-mudaram" e "pacotes-mudaram")
 sql/schema.sql      tabelas, constraints, triggers e políticas de RLS
 testes/regras.test.js
 testes/formato.test.js
