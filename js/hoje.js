@@ -106,6 +106,11 @@ document.addEventListener('pacotes-mudaram', () => {
   if (carregou) desenhar({ animar: false });
 });
 
+// Aulas criadas fora da agenda (horário fixo do pacote, RF10): busca de novo
+document.addEventListener('aulas-mudaram', () => {
+  if (carregou) carregarAulas({ animar: false });
+});
+
 function atualizarCabecalho() {
   const noMes = modo === 'mes';
   botaoAnterior.setAttribute('aria-label', noMes ? 'Mês anterior' : 'Dia anterior');

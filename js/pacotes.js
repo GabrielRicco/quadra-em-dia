@@ -6,10 +6,11 @@ import {
   validarPacote, validarPagamento, validarReducaoAulas,
   pacotesAcabando, filtrarPacotes, traduzirErroBanco,
   pacoteVencido, vencimentoDoPacote,
+  gerarAulasDoPadrao, conflitosDoPadrao, avisoDoPadrao, MENSAGENS,
 } from './regras.js';
 import {
   lerValorEmReais, formatarReais, formatarNumero, formatarData, dataISO, iniciais,
-  formatarDiaCurto, formatarHora, SITUACOES,
+  formatarDiaCurto, formatarHora, SITUACOES, limitesDoDia,
 } from './formato.js';
 import {
   el, mostrarAviso, travarBotoes, confirmar, avisar, abrirDialogo, fecharDialogo,
@@ -190,6 +191,9 @@ function abrirFormulario(pacote = null) {
   campos.pagoEm.value = pacote?.pago_em ?? '';
   campos.pagoEm.max = hoje; // o calendário já não oferece data futura (RN05)
   campoPagoEm.hidden = !campos.pago.checked;
+  // RF10 · horário fixo só ao criar o pacote
+  secaoPadrao.hidden = Boolean(pacote);
+  limparPadrao();
 
   infoSaldo.hidden = !pacote;
   if (pacote) {
@@ -260,16 +264,242 @@ form.addEventListener('submit', async (evento) => {
     (pacote ? validarReducaoAulas(dados.quantidade_aulas, pacote.usadas) : null);
   if (invalido) return mostrarAviso(erroForm, invalido);
 
+  // RF10 · horário fixo: dia sem horário ou conflito (CA15) não deixam salvar nada
+  let padrao = null;
+  if (!pacote && diasEscolhidos().length) {
+    await carregarAulasDoPeriodo(); // garante a lista de aulas já marcadas antes de checar conflito
+    padrao = calcularPadrao();
+    atualizarPrevia();
+    const campoHora = (dia) => document.getElementById(`padrao-hora-${dia}`);
+    if (padrao.semHora.length) {
+      mostrarAviso(erroForm, MENSAGENS.horarioFaltando);
+      return campoHora(padrao.semHora[0]).focus();
+    }
+    const primeiroConflito = padrao.conflitos.findIndex(Boolean);
+    if (primeiroConflito >= 0) {
+      mostrarAviso(erroForm, MENSAGENS.conflito);
+      return campoHora(padrao.aulas[primeiroConflito].inicio.getDay()).focus();
+    }
+  }
+
   travarBotoes(form, true);
   const { data, error } = pacote
     ? await supabase.from('pacotes').update(dados).eq('id', pacote.id).select('id').single()
     : await supabase.from('pacotes').insert(dados).select('id').single();
+  if (error) {
+    travarBotoes(form, false);
+    return mostrarAviso(erroForm, traduzirErroBanco(error));
+  }
+
+  // As aulas do horário fixo vão num envio só: entram todas ou nenhuma.
+  // Se falharem, o pacote recém-criado é apagado, para nada ficar pela metade.
+  const agendadas = padrao?.aulas.length ?? 0;
+  if (agendadas) {
+    const { error: erroAulas } = await supabase.from('aulas').insert(padrao.aulas.map((aula) => ({
+      pacote_id: data.id,
+      inicio: aula.inicio.toISOString(),
+      fim: aula.fim.toISOString(),
+      status: 'agendada',
+    })));
+    if (erroAulas) {
+      await supabase.from('pacotes').delete().eq('id', data.id);
+      travarBotoes(form, false);
+      return mostrarAviso(erroForm, traduzirErroBanco(erroAulas));
+    }
+  }
   travarBotoes(form, false);
 
-  if (error) return mostrarAviso(erroForm, traduzirErroBanco(error));
   fecharDialogo(dialogo);
-  avisar(pacote ? 'Pacote atualizado.' : 'Pacote criado.');
+  if (pacote) avisar('Pacote atualizado.');
+  else if (agendadas) avisar(`Pacote salvo e ${agendadas} ${agendadas === 1 ? 'aula agendada' : 'aulas agendadas'}.`);
+  else avisar('Pacote criado.');
   await carregarPacotes(data.id);
+  if (agendadas) document.dispatchEvent(new Event('aulas-mudaram'));
+});
+
+// ---------- Horário fixo ao criar o pacote (RF10, CA15 e CA16) ----------
+const secaoPadrao = document.getElementById('pacote-padrao');
+const diasPadrao = [...document.querySelectorAll('input[name="padrao-dia"]')];
+const horasPadrao = document.getElementById('padrao-horas');
+const campoDuracaoPadrao = document.getElementById('padrao-campo-duracao');
+const duracaoPadrao = document.getElementById('padrao-duracao');
+const previaPadrao = document.getElementById('padrao-previa');
+const resumoPadrao = document.getElementById('padrao-resumo');
+const avisoPadrao = document.getElementById('padrao-aviso');
+const listaPadrao = document.getElementById('padrao-lista');
+const NOMES_DOS_DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+const horaDoDia = new Map(); // dia da semana → 'HH:MM' digitado (fica guardado ao desmarcar e marcar de novo)
+const copiados = new Set(); // dias cujo horário veio de outro dia: seguem o horário digitado até serem mudados à mão
+let periodo = { compra: null, aulas: [], busca: Promise.resolve() }; // aulas já marcadas no prazo do pacote
+
+// Na ordem da tela: segunda a domingo
+function diasEscolhidos() {
+  return diasPadrao.filter((caixa) => caixa.checked).map((caixa) => Number(caixa.value));
+}
+
+function horariosEscolhidos() {
+  return diasEscolhidos().map((dia) => ({ dia, hora: horaDoDia.get(dia) ?? '' }));
+}
+
+function limparPadrao() {
+  diasPadrao.forEach((caixa) => { caixa.checked = false; });
+  horaDoDia.clear();
+  copiados.clear();
+  duracaoPadrao.value = '60';
+  periodo = { compra: null, aulas: [], busca: Promise.resolve() };
+  desenharHorasDoPadrao();
+  atualizarPrevia();
+}
+
+// Uma linha "Terça [07:00]" por dia marcado
+function desenharHorasDoPadrao() {
+  horasPadrao.replaceChildren(...diasEscolhidos().map((dia) => {
+    const id = `padrao-hora-${dia}`;
+    return el('div', { class: 'padrao-hora' },
+      el('label', { for: id }, NOMES_DOS_DIAS[dia]),
+      el('input', {
+        id,
+        type: 'time',
+        value: horaDoDia.get(dia) ?? '',
+        required: true,
+        'data-dia': dia,
+        oninput: (evento) => {
+          const hora = evento.target.value;
+          horaDoDia.set(dia, hora);
+          copiados.delete(dia);
+          // Marcou os dias antes de digitar: os outros, vazios ou copiados, recebem o mesmo horário
+          for (const outro of diasEscolhidos()) {
+            if (outro === dia || (horaDoDia.get(outro) && !copiados.has(outro))) continue;
+            horaDoDia.set(outro, hora);
+            copiados.add(outro);
+            document.getElementById(`padrao-hora-${outro}`).value = hora;
+          }
+          atualizarPrevia();
+        },
+      }),
+    );
+  }));
+}
+
+// Aulas não canceladas entre o começo do padrão e o vencimento, para achar conflito (RN03).
+// Busca uma vez por data da compra; devolve a promessa para o envio poder esperar.
+function carregarAulasDoPeriodo() {
+  const compra = campos.inicio.value || dataISO(new Date());
+  if (periodo.compra === compra) return periodo.busca;
+  const atual = { compra, aulas: [] };
+  atual.busca = buscarAulasDoPeriodo(compra).then((aulas) => {
+    atual.aulas = aulas;
+    if (periodo === atual) atualizarPrevia();
+  });
+  periodo = atual;
+  return atual.busca;
+}
+
+async function buscarAulasDoPeriodo(compra) {
+  const hoje = dataISO(new Date());
+  const { de } = limitesDoDia(compra > hoje ? compra : hoje);
+  const { ate } = limitesDoDia(vencimentoDoPacote(compra));
+  const { data, error } = await supabase
+    .from('aulas')
+    .select('id, pacote_id, inicio, fim, status')
+    .neq('status', 'cancelada')
+    .lt('inicio', ate)
+    .gt('fim', de);
+  if (error) {
+    avisar(traduzirErroBanco(error), 'erro');
+    return []; // sem a lista, o banco ainda recusa o conflito ao salvar
+  }
+  return data;
+}
+
+// null quando nenhum dia foi marcado (pacote sem horário fixo) ou quando o pacote está sendo editado
+function calcularPadrao() {
+  const horarios = horariosEscolhidos();
+  if (editando || !horarios.length) return null;
+  const compra = campos.inicio.value || dataISO(new Date());
+  const quantidade = Number(campos.quantidade.value);
+  const { aulas, naoCouberam } = gerarAulasDoPadrao({
+    compra,
+    quantidade,
+    horarios: horarios.filter((h) => h.hora),
+    duracao: Number(duracaoPadrao.value),
+    agora: new Date(),
+  });
+  return {
+    compra,
+    quantidade,
+    aulas,
+    naoCouberam,
+    semHora: horarios.filter((h) => !h.hora).map((h) => h.dia),
+    conflitos: conflitosDoPadrao(aulas, periodo.compra === compra ? periodo.aulas : []),
+  };
+}
+
+// A lista "Vai agendar…" acompanha cada mudança; conflito aparece na hora (CA15)
+function atualizarPrevia() {
+  const padrao = calcularPadrao();
+  // O erro do último "Salvar" some quando o problema deixa de existir
+  const erro = erroForm.textContent;
+  if ((erro === MENSAGENS.conflito && !padrao?.conflitos.some(Boolean))
+    || (erro === MENSAGENS.horarioFaltando && !padrao?.semHora.length)) mostrarAviso(erroForm, '');
+
+  campoDuracaoPadrao.hidden = !padrao;
+  previaPadrao.hidden = !padrao;
+  if (!padrao) return;
+
+  const vencimento = vencimentoDoPacote(padrao.compra);
+  const qtdOk = Number.isInteger(padrao.quantidade) && padrao.quantidade >= 1;
+  const mostrar = !padrao.semHora.length && qtdOk;
+  const n = padrao.aulas.length;
+
+  if (padrao.semHora.length) resumoPadrao.textContent = MENSAGENS.horarioFaltando;
+  else if (!qtdOk) resumoPadrao.textContent = 'Informe a quantidade de aulas para ver as datas.';
+  else resumoPadrao.textContent = `Vai agendar ${n} ${n === 1 ? 'aula' : 'aulas'} até o vencimento (${formatarData(vencimento).slice(0, 5)}):`;
+
+  const aviso = mostrar ? avisoDoPadrao(n, padrao.quantidade, vencimento) : null;
+  avisoPadrao.hidden = !aviso;
+  avisoPadrao.textContent = aviso ?? '';
+
+  const nomeDoAluno = (pacoteId) => pacotes.find((p) => p.id === pacoteId)?.aluno_nome ?? 'outro aluno';
+  listaPadrao.replaceChildren(...(mostrar ? padrao.aulas : []).map((aula, i) => {
+    const outra = padrao.conflitos[i];
+    const quando = el('span', {}, `${formatarDiaCurto(aula.inicio)} · ${formatarHora(aula.inicio)}`);
+    if (!outra) return el('li', {}, quando);
+    return el('li', { class: 'conflito' }, quando,
+      el('span', { class: 'conflito-texto' },
+        `${MENSAGENS.conflito} Aula de ${nomeDoAluno(outra.pacote_id)}, ${formatarHora(outra.inicio)}–${formatarHora(outra.fim)}.`));
+  }));
+  listaPadrao.hidden = !mostrar || !n;
+
+  // O campo de horário do dia com conflito fica marcado como inválido
+  const diasComConflito = new Set(padrao.aulas.filter((_, i) => padrao.conflitos[i]).map((a) => a.inicio.getDay()));
+  horasPadrao.querySelectorAll('input').forEach((campo) => {
+    if (diasComConflito.has(Number(campo.dataset.dia))) campo.setAttribute('aria-invalid', 'true');
+    else campo.removeAttribute('aria-invalid');
+  });
+}
+
+diasPadrao.forEach((caixa) => caixa.addEventListener('change', () => {
+  const dia = Number(caixa.value);
+  // O dia marcado depois do primeiro já vem com o horário do primeiro (se ninguém digitou outro nele)
+  if (caixa.checked && (!horaDoDia.get(dia) || copiados.has(dia))) {
+    const primeiro = horariosEscolhidos().find((h) => h.dia !== dia && h.hora);
+    if (primeiro) {
+      horaDoDia.set(dia, primeiro.hora);
+      copiados.add(dia);
+    }
+  }
+  desenharHorasDoPadrao();
+  if (caixa.checked) carregarAulasDoPeriodo();
+  atualizarPrevia();
+}));
+
+campos.quantidade.addEventListener('input', atualizarPrevia);
+duracaoPadrao.addEventListener('change', atualizarPrevia);
+campos.inicio.addEventListener('change', () => {
+  if (diasEscolhidos().length) carregarAulasDoPeriodo();
+  atualizarPrevia();
 });
 
 // ---------- Excluir ----------

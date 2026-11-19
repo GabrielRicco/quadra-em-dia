@@ -63,7 +63,7 @@ h1, h2, h3, p { margin: 0; }
 [hidden] { display: none !important; }
 
 /* some da tela, mas o leitor de tela ainda lê */
-.visualmente-oculto, .chip input {
+.visualmente-oculto, .chip input, .dia-semana input {
   position: absolute !important;
   width: 1px;
   height: 1px;
@@ -684,6 +684,43 @@ input:focus, select:focus, textarea:focus {
   font-variant-numeric: tabular-nums;
 }
 .historico li + li { border-top: 1px solid var(--cor-borda); }
+
+/* Horário fixo do pacote (RF10) */
+.padrao { display: grid; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--cor-borda); }
+.padrao-titulo { margin: 0; font-size: 0.875rem; font-weight: 500; }
+.dias-semana { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.dia-semana { position: relative; cursor: pointer; }
+.dia-semana span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.9rem;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--cor-texto);
+  background: var(--cor-neutra-clara);
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.dia-semana:hover span { border-color: var(--cor-borda-forte); }
+.dia-semana input:checked + span { color: var(--cor-sobre-verde); background: var(--cor-primaria); border-color: var(--cor-primaria); }
+.dia-semana input:focus-visible + span { outline: 2px solid var(--cor-primaria); outline-offset: 2px; }
+.padrao-horas { display: grid; gap: 0.5rem; }
+.padrao-hora { display: grid; grid-template-columns: 5.5rem 1fr; align-items: center; gap: 0.75rem; }
+.padrao-hora input[aria-invalid="true"] { border-color: var(--cor-erro); }
+.padrao-previa li.conflito { flex-wrap: wrap; color: var(--cor-erro); background: var(--cor-erro-clara); }
+.padrao-previa .conflito-texto { flex-basis: 100%; font-size: 0.8rem; font-weight: 500; }
+.aviso-padrao {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.875rem;
+  color: var(--cor-alerta);
+  background: var(--cor-alerta-clara);
+  border-radius: var(--raio-pequeno);
+}
 
 /* Barra de saldo do pacote (aulas usadas / contratadas) */
 .saldo {

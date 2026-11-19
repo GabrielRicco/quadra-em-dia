@@ -338,6 +338,36 @@
           </div>
         </div>
 
+        <!-- RF10 · horário fixo (só ao criar o pacote): já agenda as aulas -->
+        <div id="pacote-padrao" class="padrao" role="group" aria-labelledby="padrao-titulo">
+          <p id="padrao-titulo" class="padrao-titulo">Horário fixo <span class="opcional">(opcional: já agenda as aulas)</span></p>
+          <div class="dias-semana">
+            <label class="dia-semana"><input type="checkbox" name="padrao-dia" value="1"><span>Seg</span></label>
+            <label class="dia-semana"><input type="checkbox" name="padrao-dia" value="2"><span>Ter</span></label>
+            <label class="dia-semana"><input type="checkbox" name="padrao-dia" value="3"><span>Qua</span></label>
+            <label class="dia-semana"><input type="checkbox" name="padrao-dia" value="4"><span>Qui</span></label>
+            <label class="dia-semana"><input type="checkbox" name="padrao-dia" value="5"><span>Sex</span></label>
+            <label class="dia-semana"><input type="checkbox" name="padrao-dia" value="6"><span>Sáb</span></label>
+            <label class="dia-semana"><input type="checkbox" name="padrao-dia" value="0"><span>Dom</span></label>
+          </div>
+          <div id="padrao-horas" class="padrao-horas"></div>
+          <div id="padrao-campo-duracao" class="campo" hidden>
+            <label for="padrao-duracao">Duração de cada aula</label>
+            <select id="padrao-duracao">
+              <option value="30">30 minutos</option>
+              <option value="45">45 minutos</option>
+              <option value="60" selected>1 hora</option>
+              <option value="90">1 hora e meia</option>
+              <option value="120">2 horas</option>
+            </select>
+          </div>
+          <div id="padrao-previa" class="historico padrao-previa" hidden>
+            <p id="padrao-resumo" class="historico-titulo" aria-live="polite"></p>
+            <p id="padrao-aviso" class="aviso-padrao" aria-live="polite" hidden></p>
+            <ul id="padrao-lista"></ul>
+          </div>
+        </div>
+
         <p id="pacote-saldo" class="info-saldo" hidden></p>
 
         <div id="pacote-aulas" class="historico" hidden>
