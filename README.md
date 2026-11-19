@@ -8,9 +8,17 @@ Agenda de aulas e controle de pacotes para professores de tênis: as aulas de ho
 
 Projeto final de Tópicos Avançados de Programação (UNI-RN). Problema, regras e critérios de aceitação em [SPEC.md](SPEC.md).
 
+## O que dá para fazer
+- **Hoje:** a agenda do dia em ordem de horário, com o saldo do pacote de cada aluno e os botões *Dada*, *Falta* e *Cancelada*; setas para ver outros dias.
+- **Alunos:** cadastro completo; aluno com pacote em aberto não pode ser excluído, só marcado como inativo.
+- **Pacotes:** pacotes de aulas por aluno, com saldo, marcação de pago (data do Pix), busca pelo nome e filtros (em aberto, pagos, saldo acabando).
+- **Resumo:** recebido no mês, total a receber, quem precisa renovar e gráficos de recebido por mês e aulas por semana (cada gráfico com a tabela de valores).
+- Regras de negócio validadas na tela **e** no banco: nome, limites do pacote, horário sobreposto, aula sem saldo, data do pagamento e exclusão de aluno.
+
 ## Tecnologias
 - HTML, CSS e JavaScript puro, publicado no GitHub Pages
 - Supabase: banco Postgres, login (Auth) e segurança por linha (RLS)
+- [Motion](https://motion.dev) para as animações e [Chart.js](https://www.chartjs.org) para os gráficos, ambos pelo jsDelivr
 - Testes com o executor nativo do Node (`node --test`)
 
 ## Como rodar

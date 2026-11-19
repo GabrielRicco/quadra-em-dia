@@ -24,6 +24,7 @@ js/app.js           login, abas e carga dos dados ao entrar
 js/alunos.js        aba Alunos (uma aba por arquivo)
 js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca, filtros e aulas do pacote
 js/hoje.js          aba Hoje: agenda do dia, agendar/editar/excluir aula, botões dada/falta/cancelada
+js/resumo.js        aba Resumo: números do mês, gráficos (Chart.js baixado só ao abrir a aba) e tabela de cada gráfico
                     (as abas conversam por eventos: "alunos-mudaram" e "pacotes-mudaram")
 sql/schema.sql      tabelas, constraints, triggers e políticas de RLS
 testes/regras.test.js
@@ -42,6 +43,7 @@ package.json        "type": "module" e script "test"
 - Texto vindo do usuário ou do banco é mostrado SEMPRE com `textContent`. Nunca `innerHTML` com dados.
 - Nunca `alert()`, `confirm()` ou `prompt()` do navegador. Confirmação usa `confirmar()` (modal próprio) e aviso usa `avisar()`, ambos de `js/tela.js`.
 - Visual moderno e minimalista, com topo e faixa do título no verde da quadra: cores, raios e sombras só pelos tokens em `:root` do `style.css`.
+- Gráficos: cores só pelos tokens `--cor-grafico-*` (validadas para daltonismo e contraste; trocar só depois de validar de novo), uma série = uma cor e sem legenda, toda série com legenda em HTML, todo gráfico com a tabela de valores em "Ver os valores".
 - Animação só pelas funções de `js/animacoes.js`, que não animam nada para quem ativou `prefers-reduced-motion`. Modal abre e fecha com `abrirDialogo()` e `fecharDialogo()`, nunca `showModal()`/`close()` direto.
 - Ao fim de cada pedido, o agente atualiza o `IA.md` com uma linha: data, o que foi pedido, o que foi entregue e o que o usuário recusou ou mudou, com o motivo que ele deu. Não inventar avaliação que o usuário não fez; o que ainda não foi testado fica marcado como "aguardando teste".
 - Datas no banco em `date`; valores em `numeric(10,2)`.
