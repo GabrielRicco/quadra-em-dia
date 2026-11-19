@@ -26,7 +26,8 @@ js/pacotes.js       aba Pacotes: cadastro, marcar pago, busca, filtros e aulas d
 js/hoje.js          aba Hoje: agenda por dia (lista) ou por mês (calendário), agendar/editar/excluir aula, botões dada/falta/cancelada
 js/resumo.js        aba Resumo: números do mês, gráficos (Chart.js baixado só ao abrir a aba) e tabela de cada gráfico
                     (as abas conversam por eventos: "alunos-mudaram" e "pacotes-mudaram")
-sql/schema.sql      tabelas, constraints, triggers e políticas de RLS
+sql/schema.sql      tabelas, constraints, triggers e políticas de RLS (instalação nova, completa)
+sql/migracao-*.sql  mudanças para um banco que já existe; o usuário roda no SQL Editor do Supabase
 testes/regras.test.js
 testes/formato.test.js
 package.json        "type": "module" e script "test"
@@ -47,6 +48,8 @@ package.json        "type": "module" e script "test"
 - Animação só pelas funções de `js/animacoes.js`, que não animam nada para quem ativou `prefers-reduced-motion`. Modal abre e fecha com `abrirDialogo()` e `fecharDialogo()`, nunca `showModal()`/`close()` direto.
 - Ao fim de cada pedido, o agente atualiza o `IA.md` com uma linha: data, o que foi pedido, o que foi entregue e o que o usuário recusou ou mudou, com o motivo que ele deu. Não inventar avaliação que o usuário não fez; o que ainda não foi testado fica marcado como "aguardando teste".
 - Datas no banco em `date`; valores em `numeric(10,2)`.
+- Mudança no banco (sempre com autorização): vai no `schema.sql` E num `sql/migracao-AAAA-MM-DD-assunto.sql` que pode rodar de novo sem erro. O agente não tem acesso de administrador ao banco: quem roda a migração é o usuário. Testar antes num Postgres descartável (Docker) imitando `auth.uid()` e os papéis `anon`/`authenticated`.
+- Teste de regra que depende da data usa um "hoje" fixo, para não mudar de resultado com o passar dos dias.
 - Commits pequenos, em português, no formato `feat:`, `fix:`, `test:`, `docs:`.
 
 ## O agente NÃO pode

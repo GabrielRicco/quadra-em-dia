@@ -71,6 +71,8 @@ Relações: um **aluno** tem vários **pacotes**; um **pacote** tem várias **au
 
 **Saldo do pacote** = quantidade_aulas − aulas com status *dada* ou *falta*. Aula *cancelada* não consome.
 
+**Vencimento do pacote** = data da compra (`inicio`) + 30 dias; o pacote vale até esse dia, inclusive (RN07).
+
 ## 5. Requisitos funcionais
 
 - **RF01** · Criar conta, entrar e sair com e-mail e senha.
@@ -81,6 +83,7 @@ Relações: um **aluno** tem vários **pacotes**; um **pacote** tem várias **au
 - **RF06** · Marcar um pacote como pago, com data do pagamento.
 - **RF07** · Painel com busca por nome do aluno e filtros (pacote pago / em aberto, saldo acabando).
 - **RF08** · Resumo: total recebido no mês, total a receber (pacotes não pagos), alunos com saldo de 2 aulas ou menos.
+- **RF09** · Agenda também em calendário do mês (botão "Dia / Mês"); tocar num dia abre a lista daquele dia. _(Pedido do usuário real em 19/11.)_
 
 ## 6. Regras de negócio
 
@@ -92,6 +95,7 @@ Todas validadas **na tela** (mensagem clara) **e no banco** (constraint, trigger
 - **RN04** · Uma aula só pode ser marcada como dada ou falta se o pacote ainda tiver saldo.
 - **RN05** · Pacote pago precisa de data de pagamento, que não pode ser no futuro. Pacote não pago não tem data.
 - **RN06** · Não é possível excluir um aluno que tem pacote não pago. A alternativa é marcá-lo como inativo.
+- **RN07** · O pacote vence 30 dias depois da compra. Nenhuma aula (que não esteja cancelada) pode ficar depois do vencimento; as aulas que sobrarem no vencimento se perdem, e o aluno passa a precisar renovar. _(Pedido do usuário real em 19/11.)_
 
 ## 7. Critérios de aceitação
 
@@ -108,9 +112,12 @@ Todas validadas **na tela** (mensagem clara) **e no banco** (constraint, trigger
 | CA09 | Entro com a conta B | Não vejo nenhum dado da conta A. |
 | CA10 | Chamo a API sem login, só com a chave publicável | Nenhum dado é retornado ou alterado. |
 | CA11 | Abro o app no celular | Tudo usável sem rolar para os lados. |
+| CA12 | Agendo aula para depois do vencimento do pacote | "Esta aula fica depois do vencimento do pacote. Crie um novo pacote para o aluno." |
+| CA13 | Pacote comprado há mais de 30 dias com aulas sobrando | Aparece como vencido, com as aulas perdidas; o aluno não aparece para agendar e entra em "saldo acabando". |
+| CA14 | Abro a agenda no modo "Mês" e toco num dia | Vejo o mês de segunda a domingo com as aulas de cada dia; o toque abre a lista daquele dia. |
 
 ## 8. Decisões confirmadas com o usuário real
 
-- O pacote não vence por data: só acaba quando as aulas acabam.
+- O pacote vence 30 dias depois da compra, e as aulas que sobrarem se perdem (RN07). _(Mudou em 19/11, a pedido do usuário real depois de ver o sistema; antes, o pacote não vencia por data.)_
 - Falta do aluno sem avisar consome uma aula do pacote (status "falta").
-- No filtro "saldo acabando" (RF07) e no resumo (RF08), só o pacote mais recente de cada aluno conta: se ele já comprou um pacote mais novo, o antigo não aparece, porque já foi renovado. _(Proposta da equipe em 12/11; confirmada com o usuário real em 19/11.)_
+- No filtro "saldo acabando" (RF07) e no resumo (RF08), só o pacote mais recente de cada aluno conta: se ele já comprou um pacote mais novo, o antigo não aparece, porque já foi renovado. Pacote mais recente vencido também conta como "precisa renovar". _(Proposta da equipe em 12/11; confirmada com o usuário real em 19/11.)_
