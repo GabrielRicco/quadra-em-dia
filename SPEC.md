@@ -113,4 +113,4 @@ Todas validadas **na tela** (mensagem clara) **e no banco** (constraint, trigger
 
 - O pacote não vence por data: só acaba quando as aulas acabam.
 - Falta do aluno sem avisar consome uma aula do pacote (status "falta").
-- _Decisão da equipe (12/11), a confirmar com o usuário real:_ no filtro "saldo acabando" (RF07) e no resumo (RF08), o aluno que já comprou outro pacote com mais de 2 aulas de saldo não aparece, porque o pacote antigo dele já foi renovado.
+- No filtro "saldo acabando" (RF07) e no resumo (RF08), o aluno que já comprou outro pacote com mais de 2 aulas de saldo não aparece, porque o pacote antigo dele já foi renovado. _(Proposta da equipe em 12/11; confirmada com o usuário real em 19/11.)_
